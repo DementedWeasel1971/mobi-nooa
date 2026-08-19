@@ -95,9 +95,20 @@ dart pub get          # install/update dependencies
 dart analyze          # static analysis — must be clean before committing
 dart test             # run unit tests
 
+# Flutter bridge shim (headless, no UI)
+cd mobi_nooa_bridge
+flutter pub get
+flutter analyze
+flutter test
+
 # Android library
 cd android_mobi_nooa
 ./gradlew build       # compile + lint + unit tests
+
+# Full end-to-end build (Kotlin + headless Flutter bridge + Dart core),
+# from the repo root — requires local.properties (copy from
+# local.properties.example) with sdk.dir/flutter.sdk set:
+./gradlew :app:assembleDebug
 ```
 
 Always run `dart analyze` and `dart test` (or the equivalent Gradle task)

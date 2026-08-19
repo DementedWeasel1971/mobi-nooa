@@ -42,13 +42,11 @@ dependencies {
 
     // Dart<->Android bridge (see docs/decisions/0007-close-dart-android-bridge-gap.md).
     // MobiNooaBridge.kt talks to a headless Flutter engine embedding the
-    // `mobi_nooa_bridge` Dart module. That module is generated locally via
+    // `mobi_nooa_bridge` Dart module, generated via
     // `flutter create -t module mobi_nooa_bridge` and included as a Gradle
-    // module (`project(":flutter")`) per Flutter's "add-to-app" instructions
-    // -- it cannot be vendored as a plain Maven artifact, and the Flutter
-    // SDK is not available in this environment to generate it. Once
-    // generated and included in settings.gradle.kts, add:
-    //   implementation(project(":flutter"))
+    // module (`project(":flutter")`) via settings.gradle.kts's
+    // include_flutter.groovy, per Flutter's "add-to-app" instructions.
+    implementation(project(":flutter"))
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

@@ -227,11 +227,10 @@ transport is a headless Flutter engine (`mobi_nooa_bridge/` package +
 `MobiNooaBridge.kt`), per ADR 0007
 (`docs/decisions/0007-close-dart-android-bridge-gap.md`). `MobiNooaService`
 and `MobiNooaWorker` now call `MobiNooaBridge.runAgentLoop(...)` instead of
-containing stub bodies. **Caveat**: the `mobi_nooa_bridge` Flutter module
-scaffolding (`.android/` embedding, Gradle `settings.gradle.kts` wiring)
-requires the Flutter SDK to generate and was not available in the session
-that authored this bridge — see ADR 0007's checklist for the remaining
-local steps.
+containing stub bodies. A root Gradle project (`settings.gradle.kts`,
+`gradlew`, `app/` host module) wires `android_mobi_nooa` + the generated
+`:flutter` module together; `./gradlew :app:assembleDebug` builds a real
+APK end-to-end.
 
 ## Design invariants (do not violate without an ADR)
 
@@ -259,19 +258,16 @@ local steps.
 Track these as ADRs in `docs/decisions/` once decided:
 
 - ~~Bridge mechanism between `android_mobi_nooa` (Kotlin) and
-  `mobi_nooa_core` (Dart)~~ — **Decided**, see ADR 0007: a pure-Dart
-  `AgentBridgeDispatcher` protocol layer in `mobi_nooa_core`, wrapped by a
-  headless Flutter engine (`mobi_nooa_bridge/` package) and called from
-  Kotlin via `MobiNooaBridge.kt`'s `MethodChannel`. The Dart-side protocol
-  is implemented and tested; the Flutter module scaffolding and Gradle
-  wiring remain a manual local step (Flutter SDK required, not available
-  in the authoring environment).
+  `mobi_nooa_core` (Dart)~~ — **Decided and fully verified**, see ADR 0007:
+  a pure-Dart `AgentBridgeDispatcher` protocol layer in `mobi_nooa_core`,
+  wrapped by a headless Flutter engine (`mobi_nooa_bridge/` package) and
+  called from Kotlin via `MobiNooaBridge.kt`'s `MethodChannel`. A minimal
+  `app/` host module + root `settings.gradle.kts`/Gradle wrapper wire
+  everything together; `./gradlew :app:assembleDebug` builds a real,
+  installable APK end-to-end (Kotlin + Flutter + Dart).
 - Real on-device model backend selection for `OnDeviceModelEngine.kt`
   (MediaPipe GenAI vs. LiteRT vs. llama.cpp/GGUF) and how it maps to the
   Dart `on_device_client.dart` `ModelClient`.
 - Whether `InMemorySqliteHarness` is replaced by a real SQLite binding
   (e.g. `sqlite3` FFI package) for production persistence, or whether that
   swap happens only in the Android bridge layer.
-- `android_mobi_nooa` has no root Gradle project (`settings.gradle.kts`,
-  `gradlew`) yet — needed both to build/test the module standalone and to
-  attach the generated `mobi_nooa_bridge` Flutter module per ADR 0007.

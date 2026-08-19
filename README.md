@@ -90,9 +90,26 @@ nooa/
         └── kotlin/com/mobi/nooa/
             ├── MobiNooaService.kt      # Android Foreground Service (non-killable loops)
             ├── MobiNooaWorker.kt       # WorkManager periodic/scheduled background worker
+            ├── MobiNooaBridge.kt       # Headless FlutterEngine + MethodChannel bridge
             ├── DeviceHarnessBridge.kt  # Battery, Location, Notification & Hardware bridge
             └── OnDeviceModelEngine.kt  # LiteRT / MediaPipe / llama.cpp local inference
+
+mobi_nooa_bridge/                       # Headless Flutter "add-to-app" shim (no UI)
+├── pubspec.yaml                        # Depends on flutter + mobi_nooa_core (path)
+├── lib/main.dart                       # Forwards MethodChannel calls into
+│                                       # AgentBridgeDispatcher.handle
+└── test/bridge_handler_test.dart
+
+app/                                    # Minimal com.android.application host module
+├── build.gradle.kts                    # required by the Flutter Gradle plugin's
+└── src/main/...                        # add-to-app pattern; depends on android_mobi_nooa
+
+settings.gradle.kts, build.gradle.kts,  # Root Gradle project wiring android_mobi_nooa,
+gradlew, gradle/                        # app, and the generated :flutter module together.
 ```
+
+See `docs/decisions/0007-close-dart-android-bridge-gap.md` for the full
+Dart↔Kotlin bridge design.
 
 ---
 
@@ -103,7 +120,7 @@ nooa/
 cd mobi_nooa_core
 dart pub get
 
-# 2. Run static analysis and all 20 automated tests
+# 2. Run static analysis and all automated tests
 dart analyze
 dart test
 
@@ -112,6 +129,23 @@ dart run example/run_benchmarks.dart
 
 # 4. Run Interactive Agent CLI
 dart run bin/mobi_nooa.dart --trace
+```
+
+### Full Android build (Kotlin + Flutter bridge + Dart core)
+
+Requires the Flutter SDK, Android SDK (with a platform + build-tools + NDK),
+and JDK 17+ installed locally.
+
+```bash
+# 1. Copy the local config template and point it at your SDK installs
+cp local.properties.example local.properties
+# edit local.properties: set sdk.dir and flutter.sdk
+
+# 2. Fetch the Flutter bridge shim's dependencies
+cd mobi_nooa_bridge && flutter pub get && cd ..
+
+# 3. Build the full APK (android_mobi_nooa + mobi_nooa_bridge + mobi_nooa_core)
+./gradlew :app:assembleDebug
 ```
 
 ---

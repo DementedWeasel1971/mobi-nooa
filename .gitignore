@@ -16,6 +16,15 @@ captures/
 .cxx/
 android_mobi_nooa/build/
 android_mobi_nooa/.gradle/
+mobi_nooa_bridge/.android/
+mobi_nooa_bridge/build/
+mobi_nooa_bridge/.dart_tool/
+mobi_nooa_bridge/.idea/
+mobi_nooa_bridge/*.iml
+build/
+app/build/
+android_mobi_nooa/build/
+*.hprof
 
 # --- IDE ---
 .idea/

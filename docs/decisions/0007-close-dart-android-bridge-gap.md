@@ -62,36 +62,44 @@ exactly the shape `MobiNooaService` (foreground loop) and `MobiNooaWorker`
    (no `FlutterActivity`/UI), and call `MethodChannel.invokeMethod(...)`
    with the same JSON shape the dispatcher expects.
 
-## Consequences / what remains a manual local step
+## Consequences
 
-This ADR and the `AgentBridgeDispatcher` implementation close the
-**protocol and Dart-side** half of the gap completely, and it is verified
-in this repo (`dart analyze` clean, `dart test` passing, including 5 new
-bridge-dispatcher tests). The **Flutter engine embedding and generated
-Android glue** cannot be completed or verified inside this environment,
-because:
+**Update (follow-up session)**: the Flutter SDK, Android SDK/NDK, and JDK
+17 were installed locally and this plan was fully executed and verified:
 
-- No Flutter SDK is installed here (only the stock Dart SDK is available).
-- `android_mobi_nooa` has no root Gradle project (no `settings.gradle.kts`,
-  no `gradlew` wrapper) to attach a Flutter "add-to-app" module to.
-- No Android SDK/NDK or emulator/device is available to build or run an
-  APK in this session.
+- `flutter create -t module mobi_nooa_bridge` was run to generate the real
+  Flutter add-to-app module; the hand-written `lib/main.dart` and
+  `pubspec.yaml` from the original version of this ADR were folded into the
+  generated module (path dependency on `mobi_nooa_core`, `buildMethodCallHandler`
+  forwarding into `AgentBridgeDispatcher.handle`). `flutter analyze` and
+  `flutter test` pass (2 tests) against the real Flutter SDK.
+- A minimal `app/` Gradle module (`com.android.application`) was added as
+  the Flutter add-to-app "host project" — the Flutter Gradle plugin
+  requires a real application module to attach to; it cannot attach
+  directly to `android_mobi_nooa` (a `com.android.library` module). `app`
+  depends on `android_mobi_nooa`.
+- A root `settings.gradle.kts` + `build.gradle.kts` + `gradlew`/`gradle/`
+  wrapper (Gradle 8.12) were added, including `android_mobi_nooa`, `app`,
+  and the generated `:flutter` module (via
+  `mobi_nooa_bridge/.android/include_flutter.groovy`).
+  `flutter.hostAppProjectName=app` is set in `gradle.properties`.
+- `android_mobi_nooa/build.gradle.kts` now depends on
+  `implementation(project(":flutter"))` so `MobiNooaBridge.kt` resolves
+  `FlutterEngine`/`DartExecutor`/`MethodChannel`.
+- **`./gradlew :app:assembleDebug` succeeds end-to-end** and produces a
+  real, installable debug APK, compiling `android_mobi_nooa` (Kotlin),
+  `mobi_nooa_bridge` (Dart/Flutter), and transitively `mobi_nooa_core`
+  (Dart) together for the first time.
 
-Concretely, to finish wiring this up on a machine with the Flutter SDK
-installed:
+This closes out what was previously an open manual step. Remaining
+follow-ups are ordinary app-development polish, not architectural gaps:
+running the APK on a real device/emulator to exercise `MobiNooaService`'s
+`runAgentLoop` end-to-end with a live model provider, and iOS embedding
+(out of scope — this repo targets Android only per `DESIGN.md`).
 
-1. Run `flutter create -t module mobi_nooa_bridge` at the repo root (or
-   inside a `bridge/` directory) and set its `pubspec.yaml` to depend on
-   `mobi_nooa_core` via a relative path.
-2. Replace the generated `lib/main.dart` with a headless entry point that
-   constructs an `AgentBridgeDispatcher.withDefaults()`, registers a
-   `MethodChannel('com.mobi.nooa/agent_bridge')` handler, and forwards each
-   call to `dispatcher.handle(...)`.
-3. Follow Flutter's "Add to existing app" instructions to generate the
-   Android embedding (`.android/`) and wire it into a real Gradle root
-   project alongside `android_mobi_nooa`.
-4. Update `MobiNooaService.kt`/`MobiNooaWorker.kt` (already updated in this
-   change to the intended shape) to point at the generated Flutter module.
+See `local.properties.example` for the `sdk.dir`/`flutter.sdk` values a new
+contributor must set locally (copy to `local.properties`, which is
+gitignored) to reproduce this build.
 
 This ADR supersedes the "bridge mechanism" open question in `DESIGN.md`;
 the remaining Flutter-tooling-dependent steps are tracked as a checklist

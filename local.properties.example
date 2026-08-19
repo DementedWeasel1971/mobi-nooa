@@ -1,0 +1,5 @@
+# Copy this file to local.properties (which is gitignored) and adjust paths
+# for your machine. Required to build android_mobi_nooa / the root Gradle
+# project, since it wires in the generated mobi_nooa_bridge Flutter module.
+sdk.dir=/path/to/android-sdk
+flutter.sdk=/path/to/flutter
