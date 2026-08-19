@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -81,7 +82,30 @@ class MobiNooaService : Service() {
     }
 
     private suspend fun runAgentLoop(agentName: String, goal: String) {
-        // Interop with the mobi_nooa Dart engine via platform channel / isolate
+        // Delegates to the headless Flutter/Dart bridge (see MobiNooaBridge
+        // and docs/decisions/0007-close-dart-android-bridge-gap.md). The
+        // Dart side executes the real NooaAgent loop via
+        // AgentBridgeDispatcher.runAgentLoop and returns a JSON result.
+        val bridge = MobiNooaBridge.getInstance(applicationContext)
+        val response = bridge.runAgentLoop(agentName = agentName, goal = goal)
+
+        val error = response["error"] as? String
+        if (error != null) {
+            showResultNotification(agentName, success = false, message = error)
+        } else {
+            val result = response["result"]?.toString() ?: "(no result)"
+            showResultNotification(agentName, success = true, message = result)
+        }
+    }
+
+    private fun showResultNotification(agentName: String, success: Boolean, message: String) {
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(if (success) "$agentName finished" else "$agentName failed")
+            .setContentText(message.take(200))
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setAutoCancel(true)
+
+        NotificationManagerCompat.from(this).notify(NOTIFICATION_ID + 1, builder.build())
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

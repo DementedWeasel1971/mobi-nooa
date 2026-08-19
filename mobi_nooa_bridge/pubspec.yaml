@@ -1,0 +1,26 @@
+name: mobi_nooa_bridge
+description: >
+  Thin Flutter "add-to-app" shim that exposes mobi_nooa_core's
+  AgentBridgeDispatcher over a MethodChannel, so MobiNooaBridge.kt
+  (android_mobi_nooa) can run real agent loops inside a headless Flutter
+  engine. See docs/decisions/0007-close-dart-android-bridge-gap.md.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  mobi_nooa_core:
+    path: ../mobi_nooa_core
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  # This package intentionally has no UI (no assets/widgets) -- it is only
+  # ever run headless, embedded by a native host via FlutterEngine.

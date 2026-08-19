@@ -71,6 +71,9 @@ export 'src/bench/benchmark_suite.dart';
 export 'src/bench/swe_bench_runner.dart';
 export 'src/bench/mobile_bench_runner.dart';
 
+// Platform bridge dispatcher (pure-Dart, no Flutter dependency)
+export 'src/bridge/agent_bridge_dispatcher.dart';
+
 // Utilities & Quickstart (nooa.util)
 export 'src/util/quickstart.dart';
 export 'src/util/prompt_builder.dart';

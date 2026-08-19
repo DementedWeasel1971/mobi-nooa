@@ -135,6 +135,18 @@ end-to-end.
   formatted prompt sections, plus a static `interpolate` helper for
   `{{variable}}` template substitution.
 
+### Platform bridge dispatcher (`lib/src/bridge/`)
+
+`agent_bridge_dispatcher.dart` — `AgentBridgeDispatcher` is the
+transport-agnostic protocol layer for embedding `mobi_nooa_core` in a host
+platform (Android via `mobi_nooa_bridge/` + `MobiNooaBridge.kt`, or any
+other future embedder). It takes/returns plain JSON `Map<String, dynamic>`,
+supports `listAgents` and `runAgentLoop` actions, lets callers
+`registerAgent`/`registerModelProvider` beyond the `.withDefaults()`
+factory's built-ins (`GeneralMobileAgent`, `BenchAgent`,
+`mock`/`gemini`/`openai`/`anthropic`/`ollama`), and never throws — errors
+are captured into the response map. See ADR 0007.
+
 ### Cross-cutting concerns
 
 - **Model abstraction**: `lib/src/models/model_client.dart` defines the
@@ -176,6 +188,8 @@ mobi_nooa_core/            (Dart, platform-agnostic)
   lib/src/bench/           benchmark task/suite/report model + runners
   lib/src/util/            Quickstart agent wiring, prompt-building helpers
   lib/src/tracing/         structured tracing/telemetry
+  lib/src/bridge/          transport-agnostic JSON dispatcher used by
+                           platform embedders (see mobi_nooa_bridge/)
   test/                    unit tests, one file per subsystem area
 
 android_mobi_nooa/         (Kotlin, Android library)
@@ -184,21 +198,40 @@ android_mobi_nooa/         (Kotlin, Android library)
   src/main/kotlin/com/mobi/nooa/
     DeviceHarnessBridge.kt   Native battery/network/notification/vibration
                              access (backs a future Android DeviceHarness)
+    MobiNooaBridge.kt        Headless Flutter engine + MethodChannel wrapper
+                             calling into mobi_nooa_bridge/AgentBridgeDispatcher
+                             (see ADR 0007)
     MobiNooaService.kt       Foreground Service keeping an agent loop alive
                              past Android background/battery-optimization
-                             limits
+                             limits; delegates to MobiNooaBridge
     MobiNooaWorker.kt        WorkManager CoroutineWorker for scheduled/
-                             periodic background agent tasks
+                             periodic background agent tasks; delegates to
+                             MobiNooaBridge
     OnDeviceModelEngine.kt   On-device local LLM inference wrapper (intended
                              backend: MediaPipe GenAI / LiteRT / llama.cpp)
+
+mobi_nooa_bridge/          (Dart + Flutter, headless "add-to-app" shim)
+  pubspec.yaml             Depends on `flutter` + `mobi_nooa_core` (path);
+                           no UI/widgets, run only embedded in a headless
+                           FlutterEngine from Android
+  lib/main.dart            MethodChannel handler forwarding decoded JSON
+                           calls into AgentBridgeDispatcher.handle
 ```
 
-`android_mobi_nooa` depends on `mobi_nooa_core` conceptually (via platform
-channel/FFI bridge, not yet implemented) to expose real device harnesses
-(sensors, storage, connectivity) instead of the pure-Dart stand-ins. The
-Kotlin classes above are currently scaffolds: `runAgentLoop` in
-`MobiNooaService` and `doWork` in `MobiNooaWorker` have the interop points
-marked but not wired to the Dart engine yet.
+`mobi_nooa_core` exposes the bridge *protocol* as pure Dart:
+`lib/src/bridge/agent_bridge_dispatcher.dart`'s `AgentBridgeDispatcher`
+takes/returns JSON-shaped `Map<String, dynamic>` and never depends on
+Flutter — it is fully covered by `dart test`
+(`test/agent_bridge_dispatcher_test.dart`). The actual Dart↔Kotlin
+transport is a headless Flutter engine (`mobi_nooa_bridge/` package +
+`MobiNooaBridge.kt`), per ADR 0007
+(`docs/decisions/0007-close-dart-android-bridge-gap.md`). `MobiNooaService`
+and `MobiNooaWorker` now call `MobiNooaBridge.runAgentLoop(...)` instead of
+containing stub bodies. **Caveat**: the `mobi_nooa_bridge` Flutter module
+scaffolding (`.android/` embedding, Gradle `settings.gradle.kts` wiring)
+requires the Flutter SDK to generate and was not available in the session
+that authored this bridge — see ADR 0007's checklist for the remaining
+local steps.
 
 ## Design invariants (do not violate without an ADR)
 
@@ -225,13 +258,20 @@ marked but not wired to the Dart engine yet.
 
 Track these as ADRs in `docs/decisions/` once decided:
 
-- Bridge mechanism between `android_mobi_nooa` (Kotlin) and
-  `mobi_nooa_core` (Dart): platform channels vs. `dart:ffi` vs. a separate
-  Flutter app shell. (`MobiNooaService.runAgentLoop` and
-  `MobiNooaWorker.doWork` are the two call sites waiting on this decision.)
+- ~~Bridge mechanism between `android_mobi_nooa` (Kotlin) and
+  `mobi_nooa_core` (Dart)~~ — **Decided**, see ADR 0007: a pure-Dart
+  `AgentBridgeDispatcher` protocol layer in `mobi_nooa_core`, wrapped by a
+  headless Flutter engine (`mobi_nooa_bridge/` package) and called from
+  Kotlin via `MobiNooaBridge.kt`'s `MethodChannel`. The Dart-side protocol
+  is implemented and tested; the Flutter module scaffolding and Gradle
+  wiring remain a manual local step (Flutter SDK required, not available
+  in the authoring environment).
 - Real on-device model backend selection for `OnDeviceModelEngine.kt`
   (MediaPipe GenAI vs. LiteRT vs. llama.cpp/GGUF) and how it maps to the
   Dart `on_device_client.dart` `ModelClient`.
 - Whether `InMemorySqliteHarness` is replaced by a real SQLite binding
   (e.g. `sqlite3` FFI package) for production persistence, or whether that
   swap happens only in the Android bridge layer.
+- `android_mobi_nooa` has no root Gradle project (`settings.gradle.kts`,
+  `gradlew`) yet — needed both to build/test the module standalone and to
+  attach the generated `mobi_nooa_bridge` Flutter module per ADR 0007.

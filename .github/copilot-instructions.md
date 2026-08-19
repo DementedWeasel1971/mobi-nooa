@@ -17,9 +17,10 @@ Agents) framework, built for mobile/on-device agentic AI. Two modules:
   cognitive long-term memory (ACT-R activation, owner-gated scoping),
   SQLite-backed checkpoint storage, AST security guardrails for CodeAct,
   a benchmarking suite (SWE-bench/mobile), and tracing.
-- `android_mobi_nooa/` — Android/Kotlin library bridging native device
-  capabilities into the Dart core (currently scaffolded, interop not yet
-  wired — see `DESIGN.md`).
+- `android_mobi_nooa/` — Android/Kotlin library bridging into the Dart core
+  via a headless Flutter engine + `MethodChannel` (`MobiNooaBridge.kt`,
+  see ADR 0007); `mobi_nooa_bridge/` is the thin, UI-less Flutter shim that
+  wraps `mobi_nooa_core`'s `AgentBridgeDispatcher` on the Dart side.
 
 ## Conventions Copilot must follow
 
@@ -28,6 +29,8 @@ Agents) framework, built for mobile/on-device agentic AI. Two modules:
   grouped under the matching subsystem comment header.
 - New agent state must go through `NooaAgent.setState`/`getState`, not raw
   instance fields.
+- New platform-bridge actions must go through `AgentBridgeDispatcher`
+  (`lib/src/bridge/`) — don't hand-roll a separate `MethodChannel` handler.
 - Large/complex tool-call return values must be wrapped via
   `ObjectHeap.maybeWrap` (pass-by-reference), not returned inline.
 - New model providers implement `ModelClient`; new device/tool capabilities

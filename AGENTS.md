@@ -14,11 +14,16 @@ architecture and the 6 NOOA principles this codebase implements.
   loop, execution strategies, model clients, harnesses, coding tools,
   cognitive memory, checkpoint storage, security guardrails, and the
   benchmarking suite. See `DESIGN.md` for the full subsystem breakdown.
-- `android_mobi_nooa/` — Android (Kotlin) library module that will bridge
-  native device capabilities to the Dart core (via platform channels or FFI).
-  Currently four scaffold classes (`DeviceHarnessBridge`, `MobiNooaService`,
-  `MobiNooaWorker`, `OnDeviceModelEngine`) with the Dart interop points
-  marked but not yet wired — see `DESIGN.md`'s open architecture questions.
+- `android_mobi_nooa/` — Android (Kotlin) library module that bridges
+  native device capabilities and the `mobi_nooa_core` agent engine via a
+  headless Flutter engine + `MethodChannel` (see `MobiNooaBridge.kt` and
+  ADR 0007). `MobiNooaService`/`MobiNooaWorker` call into the bridge;
+  `DeviceHarnessBridge`/`OnDeviceModelEngine` remain scaffolds — see
+  `DESIGN.md`'s open architecture questions.
+- `mobi_nooa_bridge/` — thin Flutter "add-to-app" shim (Dart + Flutter)
+  with no UI; its only job is forwarding `MethodChannel` calls into
+  `mobi_nooa_core`'s `AgentBridgeDispatcher`. Only ever run headless,
+  embedded from Android.
 
 ## Working conventions
 
@@ -71,6 +76,12 @@ architecture and the 6 NOOA principles this codebase implements.
 - **Checkpoints go through `StateStorageManager`**: persist/resume agent
   state via `AgentCheckpoint` + `StateStorageManager`
   (`lib/src/storage/`), not bespoke JSON I/O.
+- **New platform-bridge actions**: add them to `AgentBridgeDispatcher`
+  (`lib/src/bridge/agent_bridge_dispatcher.dart`) via `registerAgent`/
+  `registerModelProvider` or a new `action` case in `handle()` — do not
+  hand-roll a separate `MethodChannel` handler in `mobi_nooa_bridge/` or a
+  new ad-hoc bridge path in Kotlin. The dispatcher is the single seam
+  between `mobi_nooa_core` and any host platform (see ADR 0007).
 
 ## Build, test, and validate
 
@@ -119,8 +130,14 @@ context rather than guessing at fixes.
 
 Repeatable, checklist-driven procedures live in `.github/skills/`:
 
+- `.github/skills/add-nooa-agent/SKILL.md` — how to create a new
+  object-oriented agent (`NooaAgent` subclass) implementing NOOA principles.
 - `.github/skills/add-nooa-harness/SKILL.md` — how to add a new
   model-callable harness capability (NOOA Principle 6).
+- `.github/skills/add-nooa-strategy/SKILL.md` — how to add a new
+  execution reasoning strategy (NOOA Principle 4).
+- `.github/skills/technical-writer/SKILL.md` — how to author, structure,
+  and verify user and developer documentation across the project.
 
 Add new skills here as more recurring tasks emerge (new model provider, new
 agent type, new execution strategy, etc.).
