@@ -10,9 +10,15 @@ framework for mobile/on-device agentic AI. See `DESIGN.md` for the full
 architecture and the 6 NOOA principles this codebase implements.
 
 - `mobi_nooa_core/` — pure Dart library, no Flutter/UI dependency. This is
-  where almost all logic lives.
+  where almost all logic lives: agent core, object heap, CodeAct engine,
+  loop, execution strategies, model clients, harnesses, coding tools,
+  cognitive memory, checkpoint storage, security guardrails, and the
+  benchmarking suite. See `DESIGN.md` for the full subsystem breakdown.
 - `android_mobi_nooa/` — Android (Kotlin) library module that will bridge
   native device capabilities to the Dart core (via platform channels or FFI).
+  Currently four scaffold classes (`DeviceHarnessBridge`, `MobiNooaService`,
+  `MobiNooaWorker`, `OnDeviceModelEngine`) with the Dart interop points
+  marked but not yet wired — see `DESIGN.md`'s open architecture questions.
 
 ## Working conventions
 
@@ -21,8 +27,11 @@ architecture and the 6 NOOA principles this codebase implements.
   style — 2-space indent, `lowerCamelCase` members, `UpperCamelCase` types).
   Kotlin/Gradle code follows standard Android/Kotlin conventions.
 - **Public API surface**: All public exports go through
-  `mobi_nooa_core/lib/mobi_nooa_core.dart`. If you add a new public class,
-  export it there.
+  `mobi_nooa_core/lib/mobi_nooa_core.dart`, grouped by subsystem with a
+  comment header (Agent Core, Object Heap, CodeAct, Loop, Models, Harness,
+  BenchAgent/Tools, Security, Memory, Storage, Strategies, Bench, Util,
+  Tracing). If you add a new public class, export it in the matching group
+  (or add a new group comment if it's a genuinely new subsystem).
 - **Docstrings double as prompts**: Per NOOA Principle 1, `NooaAgent` methods'
   doc comments and type annotations are used to build LLM tool-call prompts.
   Keep doc comments accurate and concise — they are not just documentation,
@@ -36,9 +45,32 @@ architecture and the 6 NOOA principles this codebase implements.
 - **New model providers**: implement `ModelClient` (see
   `lib/src/models/model_client.dart`) and mirror the structure of an existing
   client (e.g. `openai_client.dart`) rather than inventing a new pattern.
-- **New harness capabilities**: implement `HarnessApi` (see
-  `lib/src/harness/harness_api.dart`) and follow the naming pattern
-  `*_harness.dart`.
+- **New harness capabilities**: implement the relevant `*Harness` interface
+  under `lib/src/harness/` and follow the naming pattern `*_harness.dart`
+  (see the `.github/skills/add-nooa-harness/SKILL.md` skill for the full
+  procedure). Wire new harnesses into `HarnessApi`.
+- **New coding tools** (`lib/src/tools/`): build on top of an existing
+  harness (typically `FileSystemHarness` or a dedicated `ShellHarness`) —
+  don't call `dart:io` directly from a tool if a harness abstraction already
+  exists for that capability. Return a typed result object (see
+  `FileEditorResult`, `ShellExecutionResult`) with a `toString()` suitable
+  for direct LLM consumption.
+- **New execution strategies** (`lib/src/strategies/`): implement
+  `ExecutionStrategy` (`buildStrategyPrompt` + `processResponse`) rather than
+  branching logic inside `AgentLoop`. Return `StrategyStepResult.continueLoop`
+  or `.finish` to signal the loop.
+- **CodeAct snippets are validated before execution**: any new code path
+  that executes an LLM-authored snippet must run it through
+  `AstGuardrails.validate` first (see `lib/src/security/ast_guardrails.dart`).
+  Don't bypass this for "trusted" snippets — the guardrail is the single
+  choke point for denylisted identifiers/patterns.
+- **Long-term memory is owner-gated**: use `OwnerGatedMemoryScope`
+  (`lib/src/memory/owner_gated_memory.dart`) to read/write a
+  `CognitiveMemoryStore` in any multi-agent context; don't call the store
+  directly with a raw `ownerId` outside of the scope wrapper.
+- **Checkpoints go through `StateStorageManager`**: persist/resume agent
+  state via `AgentCheckpoint` + `StateStorageManager`
+  (`lib/src/storage/`), not bespoke JSON I/O.
 
 ## Build, test, and validate
 
@@ -71,6 +103,12 @@ context rather than guessing at fixes.
   capabilities — every state mutation, tool call, and error should be
   observable through the existing tracing (`TraceEventType`) so agent runs
   stay debuggable.
+- Do not let CodeAct snippets reach `SandboxedEnvironment`/`CodeActEngine`
+  without first passing `AstGuardrails.validate` — this is a security
+  choke point, not an optional check.
+- Do not read/write `CognitiveMemoryStore` with a raw owner ID outside an
+  `OwnerGatedMemoryScope` — that is how per-agent memory isolation is
+  enforced.
 - When a change affects architecture or a NOOA principle's implementation,
   add or update an ADR in `docs/decisions/` and update `DESIGN.md`.
 - Prefer small, verifiable, single-purpose commits. If a task is ambiguous
@@ -85,12 +123,21 @@ Repeatable, checklist-driven procedures live in `.github/skills/`:
   model-callable harness capability (NOOA Principle 6).
 
 Add new skills here as more recurring tasks emerge (new model provider, new
-agent type, etc.).
+agent type, new execution strategy, etc.).
 
 ## Where to look for examples
 
 - Agent definition pattern: `mobi_nooa_core/lib/src/agent/nooa_agent.dart`
+- Reference agents: `general_mobile_agent.dart` (minimal),
+  `bench_agent.dart` (full coding agent with shell/file/search tools)
 - Agentic loop / step execution: `mobi_nooa_core/lib/src/loop/agent_loop.dart`
 - Adding a tool/action: `registerAction(...)` calls in a `NooaAgent` subclass
 - Adding a model provider: `mobi_nooa_core/lib/src/models/*_client.dart`
 - Adding a harness: `mobi_nooa_core/lib/src/harness/*_harness.dart`
+- Adding a coding tool: `mobi_nooa_core/lib/src/tools/*_tool.dart`
+- Adding an execution strategy: `mobi_nooa_core/lib/src/strategies/*_strategy.dart`
+- Cognitive memory usage: `mobi_nooa_core/lib/src/memory/`
+- Checkpoint persistence: `mobi_nooa_core/lib/src/storage/`
+- CodeAct security checks: `mobi_nooa_core/lib/src/security/ast_guardrails.dart`
+- Benchmark suites: `mobi_nooa_core/lib/src/bench/`,
+  `mobi_nooa_core/example/run_benchmarks.dart`

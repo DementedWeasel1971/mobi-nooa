@@ -3,6 +3,7 @@ import 'filesystem_harness.dart';
 import 'network_harness.dart';
 import 'memory_harness.dart';
 import 'mcp_harness.dart';
+import 'sqlite_harness.dart';
 
 /// Unified model-callable Harness API for modern Android mobile devices.
 ///
@@ -15,6 +16,7 @@ class HarnessApi {
   final NetworkHarness network;
   final MemoryHarness memory;
   final McpHarness mcp;
+  final SqliteHarness sqlite;
 
   HarnessApi({
     DeviceHarness? device,
@@ -22,9 +24,11 @@ class HarnessApi {
     NetworkHarness? network,
     MemoryHarness? memory,
     McpHarness? mcp,
+    SqliteHarness? sqlite,
   })  : device = device ?? DefaultDeviceHarness(),
         fs = fs ?? MemoryFileSystemHarness(),
         network = network ?? DefaultNetworkHarness(),
         memory = memory ?? DefaultMemoryHarness(),
-        mcp = mcp ?? DefaultMcpHarness();
+        mcp = mcp ?? DefaultMcpHarness(),
+        sqlite = sqlite ?? InMemorySqliteHarness();
 }

@@ -22,7 +22,8 @@ principle list and `AGENTS.md` for repo-wide conventions.
 - `mobi_nooa_core/lib/src/harness/memory_harness.dart` — interface with
   richer behavior (KV store + vector search) and its default implementation
 - `mobi_nooa_core/lib/src/harness/device_harness.dart`,
-  `network_harness.dart`, `mcp_harness.dart` — other existing harnesses
+  `network_harness.dart`, `mcp_harness.dart`, `sqlite_harness.dart` — other
+  existing harnesses
 
 ## Pattern to follow
 

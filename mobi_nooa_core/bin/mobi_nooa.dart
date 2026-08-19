@@ -60,7 +60,7 @@ void main(List<String> arguments) async {
     (model as MockModelClient).queueText('Hello! mobi-nooa harness is ready to execute agents on this device.');
   }
 
-  final agent = DefaultGeneralAgent();
+  final agent = GeneralMobileAgent();
   final context = AgentContext(
     heap: heap,
     model: model,
@@ -78,26 +78,5 @@ void main(List<String> arguments) async {
   if (results['trace'] as bool) {
     print('\n=== Tracing JSONL ===');
     print(tracer.exportJsonL());
-  }
-}
-
-class DefaultGeneralAgent extends NooaAgent {
-  DefaultGeneralAgent()
-      : super(
-          name: 'GeneralMobiAgent',
-          role: 'General Purpose Android Agent',
-          description: 'General purpose agent executing tools and CodeAct on mobile device.',
-        );
-
-  @override
-  void initAgent() {
-    registerAction(
-      name: 'getDeviceInfo',
-      description: 'Retrieves live battery, network, and storage telemetry.',
-      invoker: (args) async {
-        final status = await context.harness.device.getStatus();
-        return status.toJson();
-      },
-    );
   }
 }
