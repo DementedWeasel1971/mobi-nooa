@@ -77,6 +77,16 @@ context rather than guessing at fixes.
   (e.g. which model provider to prioritize, which harness to build next),
   ask before proceeding rather than guessing.
 
+## Skills
+
+Repeatable, checklist-driven procedures live in `.github/skills/`:
+
+- `.github/skills/add-nooa-harness/SKILL.md` — how to add a new
+  model-callable harness capability (NOOA Principle 6).
+
+Add new skills here as more recurring tasks emerge (new model provider, new
+agent type, etc.).
+
 ## Where to look for examples
 
 - Agent definition pattern: `mobi_nooa_core/lib/src/agent/nooa_agent.dart`
