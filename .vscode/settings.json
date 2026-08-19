@@ -1,0 +1,14 @@
+{
+  "editor.formatOnSave": true,
+  "[dart]": {
+    "editor.defaultFormatter": "dart-code.dart-code",
+    "editor.tabSize": 2
+  },
+  "[kotlin]": {
+    "editor.tabSize": 4
+  },
+  "files.exclude": {
+    "**/.dart_tool": true,
+    "**/build": true
+  }
+}
