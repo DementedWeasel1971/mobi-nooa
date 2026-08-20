@@ -20,17 +20,13 @@ import kotlin.coroutines.resume
  * [MobiNooaService] and [MobiNooaWorker] can call into real agent logic
  * instead of stub comments.
  *
- * NOTE: this file depends on the Flutter embedding
- * (`io.flutter.embedding.engine.*`), which is only available once a Flutter
- * "add-to-app" module (e.g. `mobi_nooa_bridge/`) has been generated with the
- * Flutter SDK and included in this Gradle project's `settings.gradle.kts`
- * (see the checklist in ADR 0007). Until that module exists, this file will
- * not compile — it is written ahead of that scaffolding step so the
- * integration is fully specified and only needs the generated module wired
- * in, rather than being designed from scratch on a machine with Flutter
- * installed.
+ * Additionally, it provides the reverse channel `com.mobi.nooa/device_harness`
+ * so the Dart agent core can query real Android telemetry (battery, network)
+ * and trigger native actions (vibrate, system notifications) via [DeviceHarnessBridge].
  */
 class MobiNooaBridge private constructor(context: Context) {
+
+    val deviceHarness: DeviceHarnessBridge = DeviceHarnessBridge(context.applicationContext)
 
     private val engine: FlutterEngine = FlutterEngine(context.applicationContext).apply {
         // Executes the mobi_nooa_bridge package's headless Dart entrypoint
@@ -42,6 +38,34 @@ class MobiNooaBridge private constructor(context: Context) {
     }
 
     private val channel = MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL_NAME)
+
+    @Suppress("UNUSED_VARIABLE")
+    private val deviceChannel = MethodChannel(engine.dartExecutor.binaryMessenger, DEVICE_CHANNEL_NAME).apply {
+        setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getBatteryInfo" -> {
+                    result.success(deviceHarness.getBatteryInfo())
+                }
+                "getNetworkStatus" -> {
+                    result.success(deviceHarness.getNetworkStatus())
+                }
+                "showNotification" -> {
+                    val channelId = call.argument<String>("channelId") ?: "mobi_nooa_channel"
+                    val notificationId = call.argument<Int>("notificationId") ?: 1001
+                    val title = call.argument<String>("title") ?: ""
+                    val content = call.argument<String>("content") ?: ""
+                    deviceHarness.showNotification(channelId, notificationId, title, content)
+                    result.success(true)
+                }
+                "vibrate" -> {
+                    val durationMs = call.argument<Number>("durationMs")?.toLong() ?: 200L
+                    deviceHarness.vibrate(durationMs)
+                    result.success(true)
+                }
+                else -> result.notImplemented()
+            }
+        }
+    }
 
     /**
      * Runs an agent to completion via `AgentBridgeDispatcher.runAgentLoop`
@@ -106,6 +130,7 @@ class MobiNooaBridge private constructor(context: Context) {
 
     companion object {
         private const val CHANNEL_NAME = "com.mobi.nooa/agent_bridge"
+        private const val DEVICE_CHANNEL_NAME = "com.mobi.nooa/device_harness"
 
         @Volatile
         private var instance: MobiNooaBridge? = null

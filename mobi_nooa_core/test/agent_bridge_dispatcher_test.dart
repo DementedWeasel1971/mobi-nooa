@@ -66,5 +66,46 @@ void main() {
 
       expect(response['error'], isNull);
     });
+
+    test('device actions and NativeBridgeDeviceHarness delegate properly',
+        () async {
+      final calls = <String, dynamic>{};
+      final dispatcher = AgentBridgeDispatcher.withDefaults(
+        deviceBridge: (action, [params]) async {
+          calls[action] = params ?? true;
+          if (action == 'getBatteryInfo') {
+            return {'batteryLevel': 0.75, 'isCharging': true};
+          }
+          if (action == 'getNetworkStatus') {
+            return 'cellular';
+          }
+          return null;
+        },
+      );
+
+      final statusRes = await dispatcher.handle({'action': 'getDeviceStatus'});
+      expect(statusRes['status'], isNotNull);
+      expect(statusRes['status']['batteryLevel'], 0.75);
+      expect(statusRes['status']['isCharging'], true);
+      expect(statusRes['status']['networkType'], 'cellular');
+
+      final notifRes = await dispatcher.handle({
+        'action': 'sendNotification',
+        'title': 'Test Title',
+        'body': 'Test Body',
+      });
+      expect(notifRes['success'], isTrue);
+      expect(calls['showNotification'], isNotNull);
+      expect(calls['showNotification']['title'], 'Test Title');
+
+      final vibrateRes = await dispatcher.handle({
+        'action': 'vibrate',
+        'durationMs': 300,
+      });
+      expect(vibrateRes['success'], isTrue);
+      expect(calls['vibrate'], isNotNull);
+      expect(calls['vibrate']['durationMs'], 300);
+    });
   });
 }
+

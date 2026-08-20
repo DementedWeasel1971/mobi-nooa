@@ -11,6 +11,9 @@ import '../models/ollama_client.dart';
 import '../models/on_device_client.dart';
 import '../util/quickstart.dart';
 
+import '../harness/harness_api.dart';
+import '../harness/device_harness.dart';
+
 /// Factory for constructing a fresh [NooaAgent] instance by name.
 typedef AgentFactory = NooaAgent Function();
 
@@ -33,11 +36,21 @@ typedef ModelClientFactory = ModelClient Function(Map<String, dynamic> config);
 /// - `'listAgents'` → `{'agents': [...]}`
 /// - `'runAgentLoop'` → runs `agent.ellipsis(goal, ...)` to completion and
 ///   returns `{'result': ..., 'trace': [...]}` or `{'error': ...}`.
+/// - `'getDeviceStatus'` → returns `{'status': {...}}`
+/// - `'sendNotification'` → emits system notification via device harness
+/// - `'vibrate'` → triggers device haptic vibration
 class AgentBridgeDispatcher {
   final Map<String, AgentFactory> _agentFactories = {};
   final Map<String, ModelClientFactory> _modelFactories = {};
+  DeviceHarness? deviceHarness;
 
-  AgentBridgeDispatcher();
+  AgentBridgeDispatcher({
+    DeviceHarness? deviceHarness,
+    NativeDeviceBridge? deviceBridge,
+  }) : deviceHarness = deviceHarness ??
+            (deviceBridge != null
+                ? NativeBridgeDeviceHarness(deviceBridge)
+                : null);
 
   /// Registers an agent constructor under [name], callable from the bridge
   /// via `{"action": "runAgentLoop", "agentName": name, ...}`.
@@ -57,8 +70,14 @@ class AgentBridgeDispatcher {
   /// Convenience constructor pre-registering the reference agents
   /// (`GeneralMobileAgent`, `BenchAgent`) and known model providers
   /// (`gemini`, `openai`, `anthropic`, `ollama`, `on_device`, `mock`).
-  factory AgentBridgeDispatcher.withDefaults() {
-    final dispatcher = AgentBridgeDispatcher();
+  factory AgentBridgeDispatcher.withDefaults({
+    DeviceHarness? deviceHarness,
+    NativeDeviceBridge? deviceBridge,
+  }) {
+    final dispatcher = AgentBridgeDispatcher(
+      deviceHarness: deviceHarness,
+      deviceBridge: deviceBridge,
+    );
 
     dispatcher.registerAgent('GeneralMobileAgent', () => GeneralMobileAgent());
     dispatcher.registerAgent('BenchAgent', () => BenchAgent());
@@ -125,6 +144,22 @@ class AgentBridgeDispatcher {
           return {'agents': registeredAgentNames};
         case 'runAgentLoop':
           return await _runAgentLoop(request);
+        case 'getDeviceStatus':
+          final targetDevice = deviceHarness ?? DefaultDeviceHarness();
+          final status = await targetDevice.getStatus();
+          return {'status': status.toJson()};
+        case 'sendNotification':
+          final targetDevice = deviceHarness ?? DefaultDeviceHarness();
+          final title = request['title'] as String? ?? '';
+          final body = request['body'] as String? ?? '';
+          final id = (request['id'] as num?)?.toInt();
+          await targetDevice.sendNotification(title: title, body: body, id: id);
+          return {'success': true};
+        case 'vibrate':
+          final targetDevice = deviceHarness ?? DefaultDeviceHarness();
+          final durationMs = (request['durationMs'] as num?)?.toInt() ?? 200;
+          await targetDevice.vibrate(durationMs: durationMs);
+          return {'success': true};
         default:
           return {'error': 'Unknown or missing action: $action'};
       }
@@ -160,7 +195,15 @@ class AgentBridgeDispatcher {
         ? modelFactory(modelConfig)
         : MockModelClient();
 
-    final agent = Quickstart.createAgent(factory, model: model);
+    final harness = HarnessApi(
+      device: deviceHarness ?? DefaultDeviceHarness(),
+    );
+
+    final agent = Quickstart.createAgent(
+      factory,
+      model: model,
+      harness: harness,
+    );
 
     try {
       final result = await agent.ellipsis<dynamic>(
@@ -184,3 +227,4 @@ class AgentBridgeDispatcher {
     }
   }
 }
+

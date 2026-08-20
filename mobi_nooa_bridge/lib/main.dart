@@ -13,6 +13,7 @@ import 'package:mobi_nooa_core/mobi_nooa_core.dart';
 /// channel. See `docs/decisions/0007-close-dart-android-bridge-gap.md` for
 /// the full rationale.
 const channelName = 'com.mobi.nooa/agent_bridge';
+const deviceChannelName = 'com.mobi.nooa/device_harness';
 
 /// Builds the [MethodChannel] call handler that forwards decoded JSON
 /// requests into [dispatcher]. Extracted as a standalone function so it can
@@ -34,7 +35,14 @@ Future<dynamic> Function(MethodCall) buildMethodCallHandler(
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final dispatcher = AgentBridgeDispatcher.withDefaults();
+  const deviceChannel = MethodChannel(deviceChannelName);
+  final dispatcher = AgentBridgeDispatcher.withDefaults(
+    deviceBridge: (action, [params]) async {
+      return deviceChannel.invokeMethod(action, params);
+    },
+  );
+
   const channel = MethodChannel(channelName);
   channel.setMethodCallHandler(buildMethodCallHandler(dispatcher));
 }
+
