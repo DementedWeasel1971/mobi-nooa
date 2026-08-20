@@ -35,6 +35,7 @@ export 'src/models/openai_client.dart';
 export 'src/models/anthropic_client.dart';
 export 'src/models/ollama_client.dart';
 export 'src/models/on_device_client.dart';
+export 'src/models/nvidia_client.dart';
 
 // Model-Callable Harness APIs (Principle 6)
 export 'src/harness/harness_api.dart';

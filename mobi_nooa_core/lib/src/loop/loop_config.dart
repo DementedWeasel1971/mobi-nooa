@@ -21,7 +21,7 @@ class LoopConfig {
     this.executionMode = ExecutionMode.hybrid,
     this.enablePassByReference = true,
     this.autoSummarizeHeap = true,
-    this.stepTimeout = const Duration(seconds: 45),
+    this.stepTimeout = const Duration(seconds: 90),
     this.maxConsecutiveErrors = 3,
   });
 }

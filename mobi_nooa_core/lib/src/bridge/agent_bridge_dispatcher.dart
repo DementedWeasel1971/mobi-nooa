@@ -12,6 +12,7 @@ import '../models/openai_client.dart';
 import '../models/anthropic_client.dart';
 import '../models/ollama_client.dart';
 import '../models/on_device_client.dart';
+import '../models/nvidia_client.dart';
 import '../util/quickstart.dart';
 
 import '../harness/harness_api.dart';
@@ -133,6 +134,14 @@ class AgentBridgeDispatcher {
           template: template,
         );
       },
+    );
+    dispatcher.registerModelProvider(
+      'nvidia',
+      (config) => NvidiaClient(
+        apiKey: config['apiKey'] as String? ?? '',
+        modelName: config['modelName'] as String? ?? 'meta/llama-3.3-70b-instruct',
+        baseUrl: config['baseUrl'] as String? ?? 'https://integrate.api.nvidia.com/v1',
+      ),
     );
 
     return dispatcher;
