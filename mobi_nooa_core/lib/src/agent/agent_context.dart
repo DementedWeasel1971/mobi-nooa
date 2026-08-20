@@ -38,10 +38,11 @@ class AgentContext {
   /// Creates a scoped child context for a subagent.
   AgentContext createSubContext({
     String? subagentName,
+    ModelClient? modelOverride,
   }) {
     return AgentContext(
       heap: heap, // Shared live object heap so parent & child can exchange live object handles
-      model: model,
+      model: modelOverride ?? model,
       harness: harness,
       tracer: tracer.createChildTracer(subagentName ?? 'SubAgent'),
       parentContext: this,

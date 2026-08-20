@@ -129,8 +129,12 @@ abstract class NooaAgent {
     required NooaAgent subagent,
     required String task,
     Map<String, dynamic> inputs = const {},
+    ModelClient? modelOverride,
   }) async {
-    final subContext = context.createSubContext(subagentName: subagent.name);
+    final subContext = context.createSubContext(
+      subagentName: subagent.name,
+      modelOverride: modelOverride,
+    );
     subagent.attachContext(subContext);
 
     context.tracer.record(
