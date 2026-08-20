@@ -59,6 +59,12 @@ export 'src/memory/owner_gated_memory.dart';
 export 'src/storage/agent_checkpoint.dart';
 export 'src/storage/state_storage_manager.dart';
 
+// Skills & Procedural Knowledge (nooa-skills)
+export 'src/skills/skill.dart';
+export 'src/skills/skill_store.dart';
+export 'src/skills/skill_harness.dart';
+export 'src/skills/skill_prompt_enhancer.dart';
+
 // Execution Strategies (nooa.strategies)
 export 'src/strategies/execution_strategy.dart';
 export 'src/strategies/react_strategy.dart';

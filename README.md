@@ -3,7 +3,7 @@
 [![Dart CI](https://img.shields.io/badge/Dart-3.x-blue.svg)](https://dart.dev)
 [![Kotlin Android](https://img.shields.io/badge/Kotlin-Android-green.svg)](https://developer.android.com/kotlin)
 [![NVIDIA NOOA Compatible](https://img.shields.io/badge/NVIDIA-NOOA%20Compatible-76B900.svg)](https://github.com/NVIDIA-NeMo/labs-OO-Agents)
-[![Tests Passing](https://img.shields.io/badge/Tests-31%2F31%20Passing-success.svg)](file:///c:/Users/dband/OneDrive/Documents/Development/hermes/nooa/mobi_nooa_core/test)
+[![Tests Passing](https://img.shields.io/badge/Tests-38%2F38%20Passing-success.svg)](file:///c:/Users/dband/OneDrive/Documents/Development/hermes/nooa/mobi_nooa_core/test)
 
 **`mobi-nooa`** is a high-performance mobile agentic harness designed to turn any modern Android mobile phone into an autonomous, object-oriented AI agent runtime. It faithfully implements the architecture, modules, and design principles of **NVIDIA Object-Oriented Agents (NOOA)** ([`NVIDIA-NeMo/labs-OO-Agents`](https://github.com/NVIDIA-NeMo/labs-OO-Agents), arXiv:[2607.20709](https://arxiv.org/abs/2607.20709)) using Kotlin and Dart.
 
@@ -18,7 +18,7 @@
 | 3 | **Code as Action (CodeAct)** | Python sandbox execution | Sandboxed mobile execution engine (`CodeActEngine`, `AstEvaluator`) with AST security guardrails |
 | 4 | **Programmable Loop Engineering** | Native control flow & loops | `AgentLoop`, `ReActStrategy`, `CodeActStrategy`, `PlanAndSolveStrategy`, `SelfReflectionStrategy` |
 | 5 | **Explicit Object State** | Python class instance attributes (`self.state`) | First-class agent fields (`setState`, `getStateSnapshot`), SQLite state persistence & checkpointing |
-| 6 | **Model-Callable Harness APIs** | Harness tools & OS interfaces | Android hardware bridge (`DeviceHarness`), `SqliteHarness`, `MemoryHarness` (ACT-R & Ebbinghaus decay), FS, Network, MCP |
+| 6 | **Model-Callable Harness APIs** | Harness tools & OS interfaces | Android hardware bridge (`DeviceHarness`), `SqliteHarness`, `SkillHarness` (ADR 0009), FS, Network, Memory, MCP |
 
 ---
 
@@ -39,13 +39,17 @@
 ### 3. `nooa.storage`: State Checkpointing & SQLite
 - `StateStorageManager` & `AgentCheckpoint`: Complete serialization of paused agent states, loops, and object heaps to SQLite for crash recovery and resume.
 
-### 4. `nooa.strategies`: Execution Strategies
+### 4. `nooa-skills`: Two-Way Procedural Knowledge (ADR 0009)
+- **Inbound Skills**: Dynamic retrieval and prompt injection of structured checklists and recipes to elevate 1B–3B on-device model consistency.
+- **Outbound Skills**: Model-callable `SkillHarness` enabling autonomous agents to synthesize and persist newly discovered procedures.
+
+### 5. `nooa.strategies`: Execution Strategies
 - **ReAct**: Explicit Thought -> Action -> Observation reasoning cycles.
 - **CodeAct**: Direct multi-statement code generation and execution against live objects.
 - **PlanAndSolve**: Two-stage task decomposition and sequential step execution.
 - **SelfReflection**: Root-cause diagnosis and correction hypothesis formulation upon error.
 
-### 5. `nooa.bench`: Evaluation Suite
+### 6. `nooa.bench`: Evaluation Suite
 - On-device benchmark runner generating SOTA metrics (pass rate, step efficiency, token usage) and JSONL reports for SWE-bench and Mobile-Bench.
 
 ---
@@ -64,6 +68,7 @@ nooa/
 │   │       ├── security/               # AstGuardrails (AST validation & deny-lists)
 │   │       ├── memory/                 # CognitiveMemoryStore, ActRActivation, OwnerGatedScope
 │   │       ├── storage/                # AgentCheckpoint, StateStorageManager
+│   │       ├── skills/                 # Skill, SkillStore, SkillHarness (nooa-skills)
 │   │       ├── strategies/             # ReAct, CodeAct, PlanAndSolve, SelfReflection
 │   │       ├── bench/                  # BenchmarkSuite, SweBenchSuite, MobileBenchSuite
 │   │       ├── tools/                  # FileEditorTool, ShellHarness, CodeSearchTool
@@ -81,6 +86,8 @@ nooa/
 │       ├── nooa_principles_test.dart   # Tests for all 6 NOOA principles
 │       ├── bench_agent_test.dart       # Tests for BenchAgent & developer tools
 │       ├── cognitive_memory_test.dart  # Tests for ACT-R & Ebbinghaus decay
+│       ├── on_device_client_test.dart  # Tests for on-device models & bridge
+│       ├── skills_test.dart            # Tests for nooa-skills subsystem
 │       └── strategies_and_storage_test.dart # Tests for strategies & checkpoints
 │
 └── android_mobi_nooa/                  # Kotlin Android Native Layer

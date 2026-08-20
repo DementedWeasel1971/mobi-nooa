@@ -31,6 +31,7 @@ Welcome to the **mobi-nooa** developer and architectural documentation hub. This
 - **[ADR 0006: BenchAgent & SWE-bench Benchmarking](./decisions/0006-benchagent-and-benchmarking.md)**
 - **[ADR 0007: Headless Bridge Architecture](./decisions/0007-close-dart-android-bridge-gap.md)**
 - **[ADR 0008: On-Device LLM Runtime Architecture (llama.cpp + LiteRT-LM)](./decisions/0008-on-device-llm-runtime-architecture.md)**
+- **[ADR 0009: Two-Way Runtime Agent Skills Subsystem (nooa-skills)](./decisions/0009-runtime-skills-subsystem.md)**
 
 ---
 

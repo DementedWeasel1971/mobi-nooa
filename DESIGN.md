@@ -97,6 +97,22 @@ crash recovery:
   creating an `agent_checkpoints` table and exposing `saveCheckpoint`,
   `getLatestCheckpoint`, `listCheckpoints`.
 
+### Procedural skills & workflows (`lib/src/skills/`)
+
+Implements the `nooa-skills` two-way procedural knowledge subsystem (ADR 0009)
+for model-invariant task execution:
+
+- `skill.dart` — `Skill` model: structured recipes, checklists, required tools,
+  and few-shot examples with relevance scoring (`matchScore`).
+- `skill_store.dart` — `SkillStore` (`InMemorySkillStore`, `FileSystemSkillStore`)
+  catalog with built-in seed skills for mobile diagnostics, string replace editing,
+  and checkpoint recovery.
+- `skill_harness.dart` — `SkillHarness`: model-callable interface for skill discovery,
+  retrieval, and outbound skill synthesis (`createSkill`) by the agent.
+- `skill_prompt_enhancer.dart` — `SkillPromptEnhancer`: dynamically matches and injects
+  step-by-step procedural guidelines into agent system prompts, boosting 1B–3B on-device
+  model consistency.
+
 ### Security guardrails (`lib/src/security/`)
 
 `ast_guardrails.dart` — `AstGuardrails` is a defense-in-depth static
@@ -184,6 +200,7 @@ mobi_nooa_core/            (Dart, platform-agnostic)
   lib/src/memory/          long-term cognitive memory (ACT-R activation,
                            owner-gated scoping)
   lib/src/storage/         checkpoint persistence (SQLite-backed)
+  lib/src/skills/          procedural knowledge & skill store (two-way)
   lib/src/security/        AST-level guardrails for CodeAct execution
   lib/src/bench/           benchmark task/suite/report model + runners
   lib/src/util/            Quickstart agent wiring, prompt-building helpers
