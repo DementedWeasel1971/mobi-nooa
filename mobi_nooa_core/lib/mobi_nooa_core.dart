@@ -7,6 +7,9 @@ export 'src/agent/annotations.dart';
 export 'src/agent/agent_context.dart';
 export 'src/agent/nooa_agent.dart';
 export 'src/agent/general_mobile_agent.dart';
+export 'src/agent/autonomous_device_agent.dart';
+export 'src/agent/data_analyst_agent.dart';
+export 'src/agent/autonomous_coding_agent.dart';
 export 'src/agent/reflector.dart';
 
 // Object Heap & Pass-by-Reference (Principle 2)

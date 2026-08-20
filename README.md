@@ -3,7 +3,7 @@
 [![Dart CI](https://img.shields.io/badge/Dart-3.x-blue.svg)](https://dart.dev)
 [![Kotlin Android](https://img.shields.io/badge/Kotlin-Android-green.svg)](https://developer.android.com/kotlin)
 [![NVIDIA NOOA Compatible](https://img.shields.io/badge/NVIDIA-NOOA%20Compatible-76B900.svg)](https://github.com/NVIDIA-NeMo/labs-OO-Agents)
-[![Tests Passing](https://img.shields.io/badge/Tests-38%2F38%20Passing-success.svg)](file:///c:/Users/dband/OneDrive/Documents/Development/hermes/nooa/mobi_nooa_core/test)
+[![Tests Passing](https://img.shields.io/badge/Tests-42%2F42%20Passing-success.svg)](file:///c:/Users/dband/OneDrive/Documents/Development/hermes/nooa/mobi_nooa_core/test)
 
 **`mobi-nooa`** is a high-performance mobile agentic harness designed to turn any modern Android mobile phone into an autonomous, object-oriented AI agent runtime. It faithfully implements the architecture, modules, and design principles of **NVIDIA Object-Oriented Agents (NOOA)** ([`NVIDIA-NeMo/labs-OO-Agents`](https://github.com/NVIDIA-NeMo/labs-OO-Agents), arXiv:[2607.20709](https://arxiv.org/abs/2607.20709)) using Kotlin and Dart.
 
@@ -29,12 +29,12 @@
 - **Ebbinghaus Forgetting Curve**: Base-level activation $B_i = \ln \sum_{k=1}^n (t - t_k)^{-d}$ incorporating power-law practice and decay.
 - **Owner-Gated Scoping**: Strict multi-tenant / multi-agent security boundaries preventing memory leakage.
 
-### 2. `BenchAgent` & SOTA Developer Tooling
-- Port of NVIDIA's compact benchmark agent that achieved SOTA results on **SWE-bench Verified (82.2%)** and **CyberGym (86.8%)**:
-  - `runShell`: Terminal execution with directory tracking, timeouts, and output truncation.
-  - `strReplace`: Whitespace-exact substring replacement with uniqueness validation.
-  - `viewFile`: Line-sliced file inspection.
-  - `grepCode` & `listSymbols`: Fast regex and multi-language AST/symbol extraction.
+### 2. Built-in Reference Agents ([Detailed Guide](./docs/reference_agents.md))
+- **`AutonomousDeviceAgent`**: Real hardware telemetry, notification/vibration, and procedural skill execution & synthesis.
+- **`DataAnalystAgent`**: Large dataset manipulation via `#ref_xxx` handles on `ObjectHeap` and on-device SQLite queries.
+- **`AutonomousCodingAgent`**: File editing (`strReplace`, `createFile`), shell execution, and AST code search.
+- **`BenchAgent`**: Official NVIDIA benchmark agent achieving SOTA on SWE-bench Verified (82.2%) & CyberGym (86.8%).
+- **`GeneralMobileAgent`**: Lightweight baseline mobile assistant.
 
 ### 3. `nooa.storage`: State Checkpointing & SQLite
 - `StateStorageManager` & `AgentCheckpoint`: Complete serialization of paused agent states, loops, and object heaps to SQLite for crash recovery and resume.
@@ -62,7 +62,7 @@ nooa/
 │   ├── lib/
 │   │   ├── mobi_nooa_core.dart         # Public Barrel Export
 │   │   └── src/
-│   │       ├── agent/                  # NooaAgent, BenchAgent, GeneralMobileAgent, Reflector
+│   │       ├── agent/                  # AutonomousDevice, DataAnalyst, AutonomousCoding, Bench, GeneralMobile
 │   │       ├── heap/                   # ObjectHeap, ObjectReference, BoundedPreview
 │   │       ├── engine/                 # CodeActEngine, SandboxedEnvironment, AstEvaluator
 │   │       ├── security/               # AstGuardrails (AST validation & deny-lists)
@@ -84,6 +84,7 @@ nooa/
 │   │   └── mobi_nooa.dart              # Interactive Mobile Agent CLI
 │   └── test/
 │       ├── nooa_principles_test.dart   # Tests for all 6 NOOA principles
+│       ├── reference_agents_test.dart  # Tests for all reference agents & dispatcher
 │       ├── bench_agent_test.dart       # Tests for BenchAgent & developer tools
 │       ├── cognitive_memory_test.dart  # Tests for ACT-R & Ebbinghaus decay
 │       ├── on_device_client_test.dart  # Tests for on-device models & bridge

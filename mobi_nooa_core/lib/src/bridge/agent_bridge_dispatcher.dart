@@ -2,6 +2,9 @@ import 'dart:async';
 import '../agent/nooa_agent.dart';
 import '../agent/general_mobile_agent.dart';
 import '../agent/bench_agent.dart';
+import '../agent/autonomous_device_agent.dart';
+import '../agent/data_analyst_agent.dart';
+import '../agent/autonomous_coding_agent.dart';
 import '../models/model_client.dart';
 import '../models/mock_client.dart';
 import '../models/gemini_client.dart';
@@ -81,6 +84,9 @@ class AgentBridgeDispatcher {
 
     dispatcher.registerAgent('GeneralMobileAgent', () => GeneralMobileAgent());
     dispatcher.registerAgent('BenchAgent', () => BenchAgent());
+    dispatcher.registerAgent('AutonomousDeviceAgent', () => AutonomousDeviceAgent());
+    dispatcher.registerAgent('DataAnalystAgent', () => DataAnalystAgent());
+    dispatcher.registerAgent('AutonomousCodingAgent', () => AutonomousCodingAgent());
 
     dispatcher.registerModelProvider('mock', (config) => MockModelClient());
     dispatcher.registerModelProvider(
@@ -214,6 +220,7 @@ class AgentBridgeDispatcher {
 
       return {
         'result': result,
+        'agentName': agent.name,
         'trace': agent.context.tracer.events.map((e) => e.toJson()).toList(),
       };
     } catch (e, stack) {

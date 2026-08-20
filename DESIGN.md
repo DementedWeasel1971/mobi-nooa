@@ -27,8 +27,11 @@ an AST-level security layer for CodeAct — see below for where each lives.
 
 | Agent | Purpose | Key file |
 |---|---|---|
-| `GeneralMobileAgent` | Minimal example agent: device telemetry + note-taking. Used by the CLI (`bin/mobi_nooa.dart`) as the default demo agent. | `lib/src/agent/general_mobile_agent.dart` |
-| `BenchAgent` | Autonomous software-engineering agent (NOOA paper reference architecture) combining shell execution, file viewing/editing (`strReplace`, `createFile`), and codebase search/symbol listing. Designed to be benchmark-agnostic (SWE-bench, Terminal-Bench, CyberGym). | `lib/src/agent/bench_agent.dart` |
+| `AutonomousDeviceAgent` | Autonomous mobile triage and telemetry agent equipped with native device actions and two-way procedural skill execution/synthesis (`searchSkills`, `learnSkill`). | `lib/src/agent/autonomous_device_agent.dart` |
+| `DataAnalystAgent` | On-device tabular analytics and data science agent utilizing pass-by-reference object handles (`#ref_xxx`) in `ObjectHeap` and SQLite queries. | `lib/src/agent/data_analyst_agent.dart` |
+| `AutonomousCodingAgent` | Full autonomous software engineering agent combining file editing, shell command execution, AST regex searching, and coding repair skills. | `lib/src/agent/autonomous_coding_agent.dart` |
+| `BenchAgent` | Autonomous software-engineering agent (NOOA paper reference architecture) combining shell execution, file viewing/editing (`strReplace`, `createFile`), and codebase search/symbol listing. Benchmark-agnostic (SWE-bench, Terminal-Bench, CyberGym). | `lib/src/agent/bench_agent.dart` |
+| `GeneralMobileAgent` | Minimal example agent: device telemetry + note-taking. Used by the CLI (`bin/mobi_nooa.dart`) as the baseline demo agent. | `lib/src/agent/general_mobile_agent.dart` |
 
 Example/demo agents (not part of the public library API, illustrate usage
 patterns): `mobi_nooa_core/example/data_scientist_agent.dart`,

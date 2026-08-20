@@ -60,6 +60,10 @@ abstract class NooaAgent {
   /// Declared actions available on this agent.
   List<ActionMetadata> get declaredActions => List.unmodifiable(_actions);
 
+  /// Finds a declared action by its [name].
+  ActionMetadata? findAction(String name) =>
+      _actions.where((a) => a.name == name).firstOrNull;
+
   /// Registers an action on this agent.
   void registerAction({
     required String name,

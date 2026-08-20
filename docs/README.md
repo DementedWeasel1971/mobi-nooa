@@ -18,6 +18,7 @@ Welcome to the **mobi-nooa** developer and architectural documentation hub. This
 - **[State Checkpointing & SQLite Persistence](./state_storage_and_checkpoints.md)** — How `AgentCheckpoint` and `StateStorageManager` enable seamless pause, resume, and crash recovery.
 
 ### 🛠️ Developer & Platform Guides
+- **[Reference Agents & Built-in Harnesses](./reference_agents.md)** — Guide to the 5 built-in agents, model provisioning, skills integration, and activation architecture.
 - **[Developer Guide](./developer_guide.md)** — Best practices for creating new `NooaAgent` subclasses, custom tools, and pluggable `ExecutionStrategy` implementations.
 - **[Android Platform Integration](./android_integration.md)** — Headless Flutter engine embedding, `MethodChannel` dispatch, Foreground Services (`MobiNooaService`), and WorkManager (`MobiNooaWorker`).
 - **[Benchmarking & Evaluation Suite](./benchmarks.md)** — SWE-bench Verified and MobileBench evaluation harnesses, metric calculation, and JSONL reporting.
