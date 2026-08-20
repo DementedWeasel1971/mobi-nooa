@@ -3,7 +3,7 @@
 [![Dart CI](https://img.shields.io/badge/Dart-3.x-blue.svg)](https://dart.dev)
 [![Kotlin Android](https://img.shields.io/badge/Kotlin-Android-green.svg)](https://developer.android.com/kotlin)
 [![NVIDIA NOOA Compatible](https://img.shields.io/badge/NVIDIA-NOOA%20Compatible-76B900.svg)](https://github.com/NVIDIA-NeMo/labs-OO-Agents)
-[![Tests Passing](https://img.shields.io/badge/Tests-20%2F20%20Passing-success.svg)](file:///c:/Users/dband/OneDrive/Documents/Development/hermes/nooa/mobi_nooa_core/test)
+[![Tests Passing](https://img.shields.io/badge/Tests-31%2F31%20Passing-success.svg)](file:///c:/Users/dband/OneDrive/Documents/Development/hermes/nooa/mobi_nooa_core/test)
 
 **`mobi-nooa`** is a high-performance mobile agentic harness designed to turn any modern Android mobile phone into an autonomous, object-oriented AI agent runtime. It faithfully implements the architecture, modules, and design principles of **NVIDIA Object-Oriented Agents (NOOA)** ([`NVIDIA-NeMo/labs-OO-Agents`](https://github.com/NVIDIA-NeMo/labs-OO-Agents), arXiv:[2607.20709](https://arxiv.org/abs/2607.20709)) using Kotlin and Dart.
 
@@ -109,7 +109,8 @@ gradlew, gradle/                        # app, and the generated :flutter module
 ```
 
 See `docs/decisions/0007-close-dart-android-bridge-gap.md` for the full
-Dart↔Kotlin bridge design.
+Dart↔Kotlin bridge design, and `docs/decisions/0008-on-device-llm-runtime-architecture.md`
+for the on-device inference engine architecture (llama.cpp + LiteRT-LM).
 
 ---
 

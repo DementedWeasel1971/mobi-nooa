@@ -265,9 +265,13 @@ Track these as ADRs in `docs/decisions/` once decided:
   `app/` host module + root `settings.gradle.kts`/Gradle wrapper wire
   everything together; `./gradlew :app:assembleDebug` builds a real,
   installable APK end-to-end (Kotlin + Flutter + Dart).
-- Real on-device model backend selection for `OnDeviceModelEngine.kt`
+- ~~Real on-device model backend selection for `OnDeviceModelEngine.kt`
   (MediaPipe GenAI vs. LiteRT vs. llama.cpp/GGUF) and how it maps to the
-  Dart `on_device_client.dart` `ModelClient`.
+  Dart `on_device_client.dart` `ModelClient`~~ — **Decided**, see ADR 0008:
+  tiered architecture using `llama.cpp` embedded via JNI (GGUF quantization)
+  as universal foundation, `LiteRT-LM` for NPU acceleration, wrapped by a
+  pluggable `ILocalInferenceEngine` Kotlin abstraction and connected to
+  `OnDeviceModelClient` via platform channels or embedded localhost OpenAI endpoint.
 - Whether `InMemorySqliteHarness` is replaced by a real SQLite binding
   (e.g. `sqlite3` FFI package) for production persistence, or whether that
   swap happens only in the Android bridge layer.

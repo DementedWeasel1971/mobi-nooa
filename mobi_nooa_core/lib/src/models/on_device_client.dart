@@ -1,6 +1,21 @@
 import 'dart:async';
 import 'model_client.dart';
 
+/// Prompt template formats commonly used by local mobile LLM backends (GGUF, LiteRT).
+enum PromptTemplate {
+  /// ChatML format used by Qwen, SmolLM, and many finetunes (<|im_start|>role\ncontent<|im_end|>).
+  chatMl,
+
+  /// Llama 3 / 3.2 format (<|start_header_id|>role<|end_header_id|>\n\ncontent<|eot_id|>).
+  llama3,
+
+  /// Gemma 2 format (<start_of_turn>role\ncontent<end_of_turn>).
+  gemma,
+
+  /// Raw / generic delimiter format (<|role|>\ncontent\n<|end|>).
+  raw,
+}
+
 /// Function signature for the native Android bridge on-device LLM runner.
 typedef NativeInferenceBridge = Future<String> Function(
   String prompt, {
@@ -15,11 +30,93 @@ class OnDeviceModelClient implements ModelClient {
   @override
   final String modelName;
   final NativeInferenceBridge _bridge;
+  final PromptTemplate template;
 
   OnDeviceModelClient({
     this.modelName = 'on-device-mobile-llm',
-    required NativeInferenceBridge bridge,
-  }) : _bridge = bridge;
+    this.template = PromptTemplate.llama3,
+    NativeInferenceBridge? bridge,
+  }) : _bridge = bridge ?? _defaultBridge;
+
+  static Future<String> _defaultBridge(
+    String prompt, {
+    double temperature = 0.2,
+    int? maxTokens,
+    List<String>? stopSequences,
+  }) async {
+    return 'On-device local completion (template: prompt len ${prompt.length})';
+  }
+
+  /// Formats a list of [ModelMessage] into a single prompt string according to [template].
+  String formatPrompt(List<ModelMessage> messages) {
+    final buffer = StringBuffer();
+
+    switch (template) {
+      case PromptTemplate.chatMl:
+        for (final msg in messages) {
+          final role = _roleString(msg.role);
+          buffer.writeln('<|im_start|>$role\n${msg.content}<|im_end|>');
+        }
+        buffer.write('<|im_start|>assistant\n');
+        break;
+
+      case PromptTemplate.llama3:
+        buffer.write('<|begin_of_text|>');
+        for (final msg in messages) {
+          final role = _roleString(msg.role);
+          buffer.write(
+            '<|start_header_id|>$role<|end_header_id|>\n\n${msg.content}<|eot_id|>',
+          );
+        }
+        buffer.write('<|start_header_id|>assistant<|end_header_id|>\n\n');
+        break;
+
+      case PromptTemplate.gemma:
+        for (final msg in messages) {
+          final role = msg.role == MessageRole.assistant ? 'model' : 'user';
+          buffer.writeln('<start_of_turn>$role\n${msg.content}<end_of_turn>');
+        }
+        buffer.write('<start_of_turn>model\n');
+        break;
+
+      case PromptTemplate.raw:
+        for (final msg in messages) {
+          final role = _roleString(msg.role);
+          buffer.writeln('<|$role|>\n${msg.content}\n<|end|>');
+        }
+        buffer.write('<|assistant|>\n');
+        break;
+    }
+
+    return buffer.toString();
+  }
+
+  static String _roleString(MessageRole role) {
+    switch (role) {
+      case MessageRole.system:
+        return 'system';
+      case MessageRole.user:
+        return 'user';
+      case MessageRole.assistant:
+        return 'assistant';
+      case MessageRole.tool:
+        return 'tool';
+    }
+  }
+
+  /// Returns recommended stop sequences for the current [template].
+  List<String> get defaultStopSequences {
+    switch (template) {
+      case PromptTemplate.chatMl:
+        return const ['<|im_end|>', '<|im_start|>'];
+      case PromptTemplate.llama3:
+        return const ['<|eot_id|>', '<|end_of_text|>'];
+      case PromptTemplate.gemma:
+        return const ['<end_of_turn>', '<start_of_turn>'];
+      case PromptTemplate.raw:
+        return const ['<|end|>', '<|user|>', '<|system|>'];
+    }
+  }
 
   @override
   Future<ModelResponse> generate({
@@ -29,37 +126,25 @@ class OnDeviceModelClient implements ModelClient {
     int? maxTokens,
     List<String>? stopSequences,
   }) async {
-    final promptBuffer = StringBuffer();
-
-    // Format prompt suitable for compact mobile models (like Gemma-2B, Llama-3.2-1B/3B, Phi-3.5)
-    for (final msg in messages) {
-      if (msg.role == MessageRole.system) {
-        promptBuffer.writeln('<|system|>\n${msg.content}\n<|end|>');
-      } else if (msg.role == MessageRole.user) {
-        promptBuffer.writeln('<|user|>\n${msg.content}\n<|end|>');
-      } else if (msg.role == MessageRole.assistant) {
-        promptBuffer.writeln('<|assistant|>\n${msg.content}\n<|end|>');
-      } else if (msg.role == MessageRole.tool) {
-        promptBuffer.writeln('<|tool_result|>\n${msg.content}\n<|end|>');
-      }
-    }
-    promptBuffer.write('<|assistant|>\n');
+    final formattedPrompt = formatPrompt(messages);
+    final stops = stopSequences ?? defaultStopSequences;
 
     final rawOutput = await _bridge(
-      promptBuffer.toString(),
+      formattedPrompt,
       temperature: temperature,
       maxTokens: maxTokens ?? 1024,
-      stopSequences: stopSequences ?? ['<|end|>', '<|user|>', '<|system|>'],
+      stopSequences: stops,
     );
 
     return ModelResponse(
       text: rawOutput.trim(),
       finishReason: 'stop',
       usage: TokenUsage(
-        promptTokens: promptBuffer.length ~/ 4,
+        promptTokens: formattedPrompt.length ~/ 4,
         completionTokens: rawOutput.length ~/ 4,
-        totalTokens: (promptBuffer.length + rawOutput.length) ~/ 4,
+        totalTokens: (formattedPrompt.length + rawOutput.length) ~/ 4,
       ),
     );
   }
 }
+

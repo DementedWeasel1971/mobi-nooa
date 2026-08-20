@@ -62,9 +62,20 @@ WorkManager.getInstance(context).enqueueUniquePeriodicWork(
 
 ---
 
-## ⚡ 4. On-Device AI Inference (`OnDeviceModelEngine`)
+## ⚡ 4. On-Device AI Inference (`OnDeviceModelEngine` & ADR 0008)
 
-For offline execution without internet connectivity, `OnDeviceModelEngine` bridges to mobile NPU/GPU runtimes:
-- **Google LiteRT** (TensorFlow Lite)
-- **MediaPipe GenAI Task** (Gemma 2B / Phi-3 / Qwen)
-- **llama.cpp / ExecuTorch** (GGUF quantized models)
+For completely offline execution without cloud APIs, `OnDeviceModelEngine` implements a tiered, pluggable engine architecture (`ILocalInferenceEngine`):
+
+1. **Universal Foundation (`LlamaCppInferenceEngine`)**:
+   - `llama.cpp` embedded via JNI / ARM64 NEON with optional Vulkan acceleration.
+   - Runs standard GGUF quantized models (Llama 3.2 1B/3B, Qwen 2.5 1.5B/3B, SmolLM).
+   - Supports prompt streaming via Kotlin Flow and cancellation.
+
+2. **NPU Hardware Acceleration (`LiteRtLmInferenceEngine`)**:
+   - Google LiteRT-LM / MediaPipe GenAI for accelerated Gemma 2 / Llama models on devices with specialized NPUs.
+
+3. **Storage & Verification (`ModelStorageManager`)**:
+   - Manages app-private storage (`context.filesDir/models/`), parses GGUF binary headers, and validates SHA-256 checksums.
+
+4. **Lifecycle & Memory Safeguards**:
+   - Automatically sheds KV-cache and cancels workloads upon Android OS critical memory pressure (`ComponentCallbacks2.onTrimMemory`).

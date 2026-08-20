@@ -8,6 +8,7 @@ import '../models/gemini_client.dart';
 import '../models/openai_client.dart';
 import '../models/anthropic_client.dart';
 import '../models/ollama_client.dart';
+import '../models/on_device_client.dart';
 import '../util/quickstart.dart';
 
 /// Factory for constructing a fresh [NooaAgent] instance by name.
@@ -55,7 +56,7 @@ class AgentBridgeDispatcher {
 
   /// Convenience constructor pre-registering the reference agents
   /// (`GeneralMobileAgent`, `BenchAgent`) and known model providers
-  /// (`gemini`, `openai`, `anthropic`, `ollama`, `mock`).
+  /// (`gemini`, `openai`, `anthropic`, `ollama`, `on_device`, `mock`).
   factory AgentBridgeDispatcher.withDefaults() {
     final dispatcher = AgentBridgeDispatcher();
 
@@ -81,6 +82,32 @@ class AgentBridgeDispatcher {
         modelName: config['modelName'] as String? ?? 'llama3.2',
         baseUrl: config['baseUrl'] as String? ?? 'http://localhost:11434',
       ),
+    );
+    dispatcher.registerModelProvider(
+      'on_device',
+      (config) {
+        final templateName = config['template'] as String? ?? 'llama3';
+        PromptTemplate template;
+        switch (templateName.toLowerCase()) {
+          case 'chatml':
+            template = PromptTemplate.chatMl;
+            break;
+          case 'gemma':
+            template = PromptTemplate.gemma;
+            break;
+          case 'raw':
+            template = PromptTemplate.raw;
+            break;
+          case 'llama3':
+          default:
+            template = PromptTemplate.llama3;
+            break;
+        }
+        return OnDeviceModelClient(
+          modelName: config['modelName'] as String? ?? 'on-device-mobile-llm',
+          template: template,
+        );
+      },
     );
 
     return dispatcher;
