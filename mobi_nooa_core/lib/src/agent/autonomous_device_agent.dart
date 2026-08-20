@@ -195,5 +195,53 @@ class AutonomousDeviceAgent extends NooaAgent {
         return notes.length;
       },
     );
+
+    registerAction(
+      name: 'assessResourceHeadroom',
+      description: 'Evaluates real-time device resource pressure (RAM, thermals, battery) and computes adaptive execution budget.',
+      returnType: 'Map<String, dynamic>',
+      invoker: (args) async {
+        final budget = await context.harness.governor.evaluateBudget();
+        final json = budget.toJson();
+        setState('resource_budget', json);
+        return json;
+      },
+    );
+
+    registerAction(
+      name: 'applyGovernorPolicy',
+      description: 'Applies active load balancing and pacing policy to prevent device overdraw.',
+      parameters: const [
+        ToolParameter(
+          name: 'targetModelTier',
+          type: 'string',
+          description: 'Target model tier (e.g. "onDeviceStandard", "cloudOffload", "onDeviceTiny")',
+          required: true,
+        ),
+        ToolParameter(
+          name: 'maxConcurrent',
+          type: 'integer',
+          description: 'Max parallel agent tasks allowed',
+          required: true,
+        ),
+        ToolParameter(
+          name: 'pacingDelayMs',
+          type: 'integer',
+          description: 'Step execution pacing delay in milliseconds',
+          required: true,
+        ),
+      ],
+      returnType: 'Map<String, dynamic>',
+      invoker: (args) async {
+        final policy = {
+          'targetModelTier': args['targetModelTier'],
+          'maxConcurrent': args['maxConcurrent'],
+          'pacingDelayMs': args['pacingDelayMs'],
+          'appliedAt': DateTime.now().toIso8601String(),
+        };
+        setState('governor_policy', policy);
+        return {'status': 'policy_applied', 'policy': policy};
+      },
+    );
   }
 }

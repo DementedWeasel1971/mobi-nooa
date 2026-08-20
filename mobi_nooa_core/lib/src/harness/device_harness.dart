@@ -1,6 +1,17 @@
 import 'dart:async';
 
-/// Device state snapshot (battery, network, sensors, memory).
+/// Mobile hardware thermal throttling states.
+enum ThermalState {
+  nominal,
+  fair,
+  serious,
+  severe,
+  critical,
+  emergency,
+  shutdown,
+}
+
+/// Device state snapshot (battery, network, sensors, memory, thermals).
 class DeviceStatus {
   final double batteryLevel; // 0.0 to 1.0
   final bool isCharging;
@@ -8,6 +19,11 @@ class DeviceStatus {
   final bool isLowPowerMode;
   final int freeDiskSpaceMb;
   final int totalDiskSpaceMb;
+  final int availableRamMb;
+  final int totalRamMb;
+  final bool isLowRamDevice;
+  final ThermalState thermalState;
+  final double cpuLoadFraction; // 0.0 to 1.0
 
   const DeviceStatus({
     this.batteryLevel = 0.85,
@@ -16,6 +32,11 @@ class DeviceStatus {
     this.isLowPowerMode = false,
     this.freeDiskSpaceMb = 12400,
     this.totalDiskSpaceMb = 128000,
+    this.availableRamMb = 4096,
+    this.totalRamMb = 8192,
+    this.isLowRamDevice = false,
+    this.thermalState = ThermalState.nominal,
+    this.cpuLoadFraction = 0.15,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,6 +46,11 @@ class DeviceStatus {
         'isLowPowerMode': isLowPowerMode,
         'freeDiskSpaceMb': freeDiskSpaceMb,
         'totalDiskSpaceMb': totalDiskSpaceMb,
+        'availableRamMb': availableRamMb,
+        'totalRamMb': totalRamMb,
+        'isLowRamDevice': isLowRamDevice,
+        'thermalState': thermalState.name,
+        'cpuLoadFraction': cpuLoadFraction,
       };
 }
 

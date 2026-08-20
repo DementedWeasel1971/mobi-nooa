@@ -204,6 +204,7 @@ mobi_nooa_core/            (Dart, platform-agnostic)
                            owner-gated scoping)
   lib/src/storage/         checkpoint persistence (SQLite-backed)
   lib/src/skills/          procedural knowledge & skill store (two-way)
+  lib/src/governor/        adaptive on-device resource governor & load balancer
   lib/src/security/        AST-level guardrails for CodeAct execution
   lib/src/bench/           benchmark task/suite/report model + runners
   lib/src/util/            Quickstart agent wiring, prompt-building helpers

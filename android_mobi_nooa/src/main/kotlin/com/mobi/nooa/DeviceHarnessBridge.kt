@@ -1,6 +1,7 @@
 package com.mobi.nooa
 
 import android.Manifest
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -9,6 +10,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import android.os.Build
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -44,6 +46,45 @@ class DeviceHarnessBridge(private val context: Context) {
     }
 
     /**
+     * Reads real-time available system RAM and low-memory state.
+     */
+    fun getMemoryInfo(): Map<String, Any> {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        val mi = ActivityManager.MemoryInfo()
+        am?.getMemoryInfo(mi)
+
+        val availMb = (mi.availMem / (1024L * 1024L)).toInt()
+        val totalMb = (mi.totalMem / (1024L * 1024L)).toInt()
+
+        return mapOf(
+            "availableRamMb" to availMb,
+            "totalRamMb" to totalMb,
+            "isLowRamDevice" to mi.lowMemory
+        )
+    }
+
+    /**
+     * Reads Android 10+ (API 29+) hardware thermal throttling state.
+     */
+    fun getThermalStatus(): String {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+            when (pm?.currentThermalStatus) {
+                PowerManager.THERMAL_STATUS_NONE -> "nominal"
+                PowerManager.THERMAL_STATUS_LIGHT -> "fair"
+                PowerManager.THERMAL_STATUS_MODERATE -> "serious"
+                PowerManager.THERMAL_STATUS_SEVERE -> "severe"
+                PowerManager.THERMAL_STATUS_CRITICAL -> "critical"
+                PowerManager.THERMAL_STATUS_EMERGENCY -> "emergency"
+                PowerManager.THERMAL_STATUS_SHUTDOWN -> "shutdown"
+                else -> "nominal"
+            }
+        } else {
+            "nominal"
+        }
+    }
+
+    /**
      * Checks network type (wifi, cellular, ethernet, none).
      */
     fun getNetworkStatus(): String {
@@ -59,6 +100,27 @@ class DeviceHarnessBridge(private val context: Context) {
             caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "ethernet"
             else -> "other"
         }
+    }
+
+    /**
+     * Collects an aggregated device status snapshot for the Resource Governor.
+     */
+    fun getFullDeviceStatus(): Map<String, Any> {
+        val battery = getBatteryInfo()
+        val memory = getMemoryInfo()
+        val thermal = getThermalStatus()
+        val network = getNetworkStatus()
+
+        return mapOf(
+            "batteryLevel" to (battery["batteryLevel"] ?: 0.85f),
+            "isCharging" to (battery["isCharging"] ?: false),
+            "availableRamMb" to (memory["availableRamMb"] ?: 4096),
+            "totalRamMb" to (memory["totalRamMb"] ?: 8192),
+            "isLowRamDevice" to (memory["isLowRamDevice"] ?: false),
+            "thermalState" to thermal,
+            "networkType" to network,
+            "cpuLoadFraction" to 0.15f
+        )
     }
 
     /**

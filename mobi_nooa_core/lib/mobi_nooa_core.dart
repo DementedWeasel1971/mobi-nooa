@@ -90,3 +90,6 @@ export 'src/util/prompt_builder.dart';
 // Tracing & Telemetry
 export 'src/tracing/trace_event.dart';
 export 'src/tracing/tracer.dart';
+
+// Resource Governor & Adaptive Load Balancer (nooa-governor)
+export 'src/governor/resource_governor.dart';
