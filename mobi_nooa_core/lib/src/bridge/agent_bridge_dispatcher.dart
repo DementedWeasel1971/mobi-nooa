@@ -17,6 +17,9 @@ import '../util/quickstart.dart';
 
 import '../harness/harness_api.dart';
 import '../harness/device_harness.dart';
+import '../harness/sqlite_harness.dart';
+import '../storage/agent_checkpoint.dart';
+import '../storage/state_storage_manager.dart';
 
 /// Factory for constructing a fresh [NooaAgent] instance by name.
 typedef AgentFactory = NooaAgent Function();
@@ -47,14 +50,17 @@ class AgentBridgeDispatcher {
   final Map<String, AgentFactory> _agentFactories = {};
   final Map<String, ModelClientFactory> _modelFactories = {};
   DeviceHarness? deviceHarness;
+  final StateStorageManager storage;
 
   AgentBridgeDispatcher({
     DeviceHarness? deviceHarness,
     NativeDeviceBridge? deviceBridge,
-  }) : deviceHarness = deviceHarness ??
+    StateStorageManager? storage,
+  })  : deviceHarness = deviceHarness ??
             (deviceBridge != null
                 ? NativeBridgeDeviceHarness(deviceBridge)
-                : null);
+                : null),
+        storage = storage ?? StateStorageManager(sqlite: InMemorySqliteHarness());
 
   /// Registers an agent constructor under [name], callable from the bridge
   /// via `{"action": "runAgentLoop", "agentName": name, ...}`.
@@ -157,8 +163,32 @@ class AgentBridgeDispatcher {
       switch (action) {
         case 'listAgents':
           return {'agents': registeredAgentNames};
+        case 'listModelProviders':
+          return {'providers': _modelFactories.keys.toList()};
+        case 'listModels':
+          final provider = request['provider'] as String? ?? 'nvidia';
+          final apiKey = request['apiKey'] as String? ?? '';
+          final baseUrl = request['baseUrl'] as String? ?? 'https://integrate.api.nvidia.com/v1';
+          if (provider == 'nvidia') {
+            final models = await NvidiaClient.fetchModels(apiKey: apiKey, baseUrl: baseUrl);
+            return {'models': models};
+          }
+          return {'models': []};
         case 'runAgentLoop':
           return await _runAgentLoop(request);
+        case 'saveCheckpoint':
+          final checkpointJson = request['checkpoint'] as Map<String, dynamic>?;
+          if (checkpointJson == null) return {'error': 'Missing checkpoint payload'};
+          await storage.initialize();
+          final checkpoint = AgentCheckpoint.fromJson(checkpointJson);
+          await storage.saveCheckpoint(checkpoint);
+          return {'success': true, 'checkpointId': checkpoint.checkpointId};
+        case 'getLatestCheckpoint':
+          final agentName = request['agentName'] as String?;
+          if (agentName == null) return {'error': 'Missing agentName'};
+          await storage.initialize();
+          final checkpoint = await storage.getLatestCheckpoint(agentName);
+          return {'checkpoint': checkpoint?.toJson()};
         case 'getDeviceStatus':
           final targetDevice = deviceHarness ?? DefaultDeviceHarness();
           final status = await targetDevice.getStatus();
@@ -220,6 +250,11 @@ class AgentBridgeDispatcher {
       harness: harness,
     );
 
+    if (request.containsKey('initialState') && request['initialState'] is Map) {
+      final initialState = Map<String, dynamic>.from(request['initialState'] as Map);
+      agent.restoreState(initialState);
+    }
+
     try {
       final result = await agent.ellipsis<dynamic>(
         goal,
@@ -230,12 +265,16 @@ class AgentBridgeDispatcher {
       return {
         'result': result,
         'agentName': agent.name,
+        'state': agent.getStateSnapshot(),
+        'heapHandles': agent.context.heap.handles,
         'trace': agent.context.tracer.events.map((e) => e.toJson()).toList(),
       };
     } catch (e, stack) {
       return {
         'error': e.toString(),
         'stack': stack.toString(),
+        'state': agent.getStateSnapshot(),
+        'heapHandles': agent.context.heap.handles,
         'trace': agent.context.tracer.events.map((e) => e.toJson()).toList(),
       };
     } finally {

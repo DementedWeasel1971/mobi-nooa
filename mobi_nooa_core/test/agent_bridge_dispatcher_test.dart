@@ -106,6 +106,55 @@ void main() {
       expect(calls['vibrate'], isNotNull);
       expect(calls['vibrate']['durationMs'], 300);
     });
+
+    test('listModelProviders and initialState state restoration work through dispatcher', () async {
+      final dispatcher = AgentBridgeDispatcher.withDefaults();
+
+      final providersRes = await dispatcher.handle({'action': 'listModelProviders'});
+      expect(providersRes['providers'], containsAll(['mock', 'gemini', 'openai', 'anthropic', 'ollama', 'on_device', 'nvidia']));
+
+      final runRes = await dispatcher.handle({
+        'action': 'runAgentLoop',
+        'agentName': 'GeneralMobileAgent',
+        'goal': 'Say hello',
+        'initialState': {'restoredNote': 'prior_session_data'},
+      });
+
+      expect(runRes['error'], isNull);
+      expect(runRes['state'], isNotNull);
+      expect(runRes['state']['restoredNote'], equals('prior_session_data'));
+      expect(runRes['heapHandles'], isA<List>());
+    });
+
+    test('saveCheckpoint and getLatestCheckpoint work through bridge dispatcher', () async {
+      final dispatcher = AgentBridgeDispatcher.withDefaults();
+
+      final saveRes = await dispatcher.handle({
+        'action': 'saveCheckpoint',
+        'checkpoint': {
+          'checkpointId': 'chk_101',
+          'agentName': 'AutonomousDeviceAgent',
+          'timestamp': DateTime.now().toIso8601String(),
+          'stepIndex': 3,
+          'status': 'paused',
+          'stateSnapshot': {'batteryStatus': '80%'},
+          'heapReferences': [],
+        },
+      });
+
+      expect(saveRes['success'], isTrue);
+      expect(saveRes['checkpointId'], equals('chk_101'));
+
+      final getRes = await dispatcher.handle({
+        'action': 'getLatestCheckpoint',
+        'agentName': 'AutonomousDeviceAgent',
+      });
+
+      expect(getRes['checkpoint'], isNotNull);
+      expect(getRes['checkpoint']['checkpointId'], equals('chk_101'));
+      expect(getRes['checkpoint']['stepIndex'], equals(3));
+      expect(getRes['checkpoint']['stateSnapshot']['batteryStatus'], equals('80%'));
+    });
   });
 }
 

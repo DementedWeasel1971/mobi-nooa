@@ -69,17 +69,20 @@ class MobiNooaBridge private constructor(context: Context) {
 
     /**
      * Runs an agent to completion via `AgentBridgeDispatcher.runAgentLoop`
-     * and returns its JSON response (`result`/`trace`, or `error`/`stack`).
+     * and returns its JSON response (`result`/`trace`/`state`/`heapHandles`, or `error`/`stack`).
      */
     suspend fun runAgentLoop(
         agentName: String,
         goal: String,
         inputs: Map<String, Any?> = emptyMap(),
+        initialState: Map<String, Any?>? = null,
         maxSteps: Int = 10,
         modelProvider: String = "mock",
         modelApiKey: String? = null,
+        modelBaseUrl: String? = null,
+        modelName: String? = null,
     ): Map<String, Any?> {
-        val request = mapOf(
+        val request = mutableMapOf<String, Any?>(
             "action" to "runAgentLoop",
             "agentName" to agentName,
             "goal" to goal,
@@ -88,13 +91,29 @@ class MobiNooaBridge private constructor(context: Context) {
             "model" to mapOf(
                 "provider" to modelProvider,
                 "apiKey" to modelApiKey,
+                "baseUrl" to modelBaseUrl,
+                "modelName" to modelName,
             ),
         )
+        if (initialState != null) {
+            request["initialState"] = initialState
+        }
         return invoke(request)
     }
 
     /** Lists agents registered on the Dart-side dispatcher. */
     suspend fun listAgents(): Map<String, Any?> = invoke(mapOf("action" to "listAgents"))
+
+    /** Lists model providers registered on the Dart-side dispatcher. */
+    suspend fun listModelProviders(): Map<String, Any?> = invoke(mapOf("action" to "listModelProviders"))
+
+    /** Persists an agent checkpoint into the SQLite state storage manager. */
+    suspend fun saveCheckpoint(checkpoint: Map<String, Any?>): Map<String, Any?> =
+        invoke(mapOf("action" to "saveCheckpoint", "checkpoint" to checkpoint))
+
+    /** Retrieves the latest stored checkpoint for an agent. */
+    suspend fun getLatestCheckpoint(agentName: String): Map<String, Any?> =
+        invoke(mapOf("action" to "getLatestCheckpoint", "agentName" to agentName))
 
     private suspend fun invoke(request: Map<String, Any?>): Map<String, Any?> =
         suspendCancellableCoroutine { continuation ->

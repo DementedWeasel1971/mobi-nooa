@@ -72,6 +72,9 @@ class ObjectHeap {
   List<ObjectReference> get references =>
       List.unmodifiable(_references.values);
 
+  /// All currently registered object handles in the heap (e.g. ['#ref_1', '#ref_2']).
+  List<String> get handles => _objects.keys.toList();
+
   /// Total count of objects in heap.
   int get size => _objects.length;
 
