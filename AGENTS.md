@@ -115,6 +115,44 @@ Always run `dart analyze` and `dart test` (or the equivalent Gradle task)
 after modifying Dart or Kotlin source, and paste failing output back into
 context rather than guessing at fixes.
 
+## How to Build Applications with mobi-nooa (AI Developer Guide)
+
+When assisting users or generating application code with `mobi-nooa`, follow this architectural workflow:
+
+### 1. Choosing a Built-in Reference Agent
+`mobi-nooa` provides 5 pre-built reference agents under `mobi_nooa_core/lib/src/agent/`:
+- **`AutonomousDeviceAgent`**: Mobile system triage, battery monitoring, notifications, vibration, and **two-way procedural skills** (`searchSkills`, `loadSkill`, `learnSkill`).
+- **`DataAnalystAgent`**: Large dataset manipulation via pass-by-reference handles (`#ref_xxx`) in `ObjectHeap` and on-device SQLite analytics.
+- **`AutonomousCodingAgent`**: Software engineering agent with line-numbered file viewing, exact `strReplace`, `createFile`, shell execution, and code searching.
+- **`BenchAgent`**: Official NVIDIA port for SWE-bench & CyberGym benchmark evaluations.
+- **`GeneralMobileAgent`**: Lightweight baseline assistant for simple mobile tasks.
+
+### 2. Providing an LLM Backend
+Agents require a `ModelClient`. AI developers can provision:
+- **Quantized On-Device Inference** (`OnDeviceModelClient`): Supports offline execution on mobile hardware via `llama.cpp` (GGUF) or `LiteRT-LM` with prompt formatting templates (`llama3`, `chatMl`, `gemma`, `raw`).
+- **Cloud Providers**: `GeminiClient` (Google Gemini 1.5 Pro/Flash), `OpenAIClient` (GPT-4o), `AnthropicClient` (Claude 3.5 Sonnet), `OllamaClient` (local workstation Ollama).
+
+```dart
+// 3-Line Quickstart Pattern
+final agent = Quickstart.createAgent(
+  () => AutonomousDeviceAgent(),
+  model: OnDeviceModelClient(template: PromptTemplate.llama3),
+);
+final result = await agent.ellipsis<String>('Triage battery drain', maxSteps: 5);
+```
+
+### 3. Enabling Two-Way Runtime Skills (`nooa-skills`, ADR 0009)
+Skills provide deterministic procedural knowledge to ensure consistent outcomes across model switches (cloud to 1B–3B on-device models):
+- **Inbound Skills (TO the Agent)**: `SkillPromptEnhancer` searches `SkillStore` (`InMemorySkillStore`, `FileSystemSkillStore`) and injects matching checklists/recipes into the LLM system prompt based on the task goal.
+- **Outbound Skills (FROM the Agent)**: Agents synthesize newly discovered workflows via `learnSkill` (or `SkillHarness.createSkill`), persisting them as JSON files in `/skills/`.
+- **Approved Skill Repositories & Device Profiles**: Ingest device-specific skill packs (e.g. Pixel Tensor NPU optimization, Samsung OneUI background retention) from user-approved repository paths matching introspected `DeviceHarness` profiles.
+
+### 4. Android Host App Integration Seams
+- Native host app integrates `android_mobi_nooa` library.
+- Background execution: `MobiNooaService` (non-killable Foreground Service) or `MobiNooaWorker` (WorkManager periodic scheduler).
+- Transport seam: `MobiNooaBridge.kt` calls `com.mobi.nooa/agent_bridge` -> `mobi_nooa_bridge/lib/main.dart` -> `AgentBridgeDispatcher.handle()`.
+- Native hardware queries: `com.mobi.nooa/device_harness` calls into `DeviceHarnessBridge.kt`.
+
 ## Guardrails
 
 - Do not add a dependency on `flutter`/`dart:ui` to `mobi_nooa_core` — it must
@@ -131,15 +169,17 @@ context rather than guessing at fixes.
 - Do not read/write `CognitiveMemoryStore` with a raw owner ID outside an
   `OwnerGatedMemoryScope` — that is how per-agent memory isolation is
   enforced.
+- Ingested external skills must pass through `AstGuardrails` and only originate
+  from user-approved skill repositories configured in the harness.
 - When a change affects architecture or a NOOA principle's implementation,
   add or update an ADR in `docs/decisions/` and update `DESIGN.md`.
 - Prefer small, verifiable, single-purpose commits. If a task is ambiguous
   (e.g. which model provider to prioritize, which harness to build next),
   ask before proceeding rather than guessing.
 
-## Skills
+## Skills for Repository Development
 
-Repeatable, checklist-driven procedures live in `.github/skills/`:
+Repeatable, checklist-driven developer skills live in `.github/skills/`:
 
 - `.github/skills/add-nooa-agent/SKILL.md` — how to create a new
   object-oriented agent (`NooaAgent` subclass) implementing NOOA principles.
@@ -150,20 +190,19 @@ Repeatable, checklist-driven procedures live in `.github/skills/`:
 - `.github/skills/technical-writer/SKILL.md` — how to author, structure,
   and verify user and developer documentation across the project.
 
-Add new skills here as more recurring tasks emerge (new model provider, new
-agent type, new execution strategy, etc.).
-
 ## Where to look for examples
 
-- Agent definition pattern: `mobi_nooa_core/lib/src/agent/nooa_agent.dart`
-- Reference agents: `general_mobile_agent.dart` (minimal),
-  `bench_agent.dart` (full coding agent with shell/file/search tools)
+- Reference agent implementations: `mobi_nooa_core/lib/src/agent/`
+  (`autonomous_device_agent.dart`, `data_analyst_agent.dart`,
+  `autonomous_coding_agent.dart`, `bench_agent.dart`, `general_mobile_agent.dart`)
+- Application Integration Guide: `docs/reference_agents.md`, `docs/developer_guide.md`, `docs/android_integration.md`
+- Skills subsystem: `mobi_nooa_core/lib/src/skills/`
+- On-device model client: `mobi_nooa_core/lib/src/models/on_device_client.dart`
 - Agentic loop / step execution: `mobi_nooa_core/lib/src/loop/agent_loop.dart`
+- Bridge dispatcher: `mobi_nooa_core/lib/src/bridge/agent_bridge_dispatcher.dart`
 - Adding a tool/action: `registerAction(...)` calls in a `NooaAgent` subclass
 - Adding a model provider: `mobi_nooa_core/lib/src/models/*_client.dart`
 - Adding a harness: `mobi_nooa_core/lib/src/harness/*_harness.dart`
-- Adding a coding tool: `mobi_nooa_core/lib/src/tools/*_tool.dart`
-- Adding an execution strategy: `mobi_nooa_core/lib/src/strategies/*_strategy.dart`
 - Cognitive memory usage: `mobi_nooa_core/lib/src/memory/`
 - Checkpoint persistence: `mobi_nooa_core/lib/src/storage/`
 - CodeAct security checks: `mobi_nooa_core/lib/src/security/ast_guardrails.dart`

@@ -9,14 +9,16 @@
 mobi-nooa is a Dart/Kotlin implementation of NVIDIA's NOOA (Object-Oriented
 Agents) framework, built for mobile/on-device agentic AI. Two modules:
 
-- `mobi_nooa_core/` — platform-agnostic Dart engine: agent core, object
-  heap, CodeAct execution, programmable loop, pluggable execution
-  strategies (ReAct, CodeAct, Plan-and-Solve, Self-Reflection), model
-  clients, harnesses (filesystem, network, device, memory, SQLite, MCP),
-  coding tools (shell/file-editor/code-search) powering `BenchAgent`,
-  cognitive long-term memory (ACT-R activation, owner-gated scoping),
-  SQLite-backed checkpoint storage, AST security guardrails for CodeAct,
-  a benchmarking suite (SWE-bench/mobile), and tracing.
+- `mobi_nooa_core/` — platform-agnostic Dart engine: 5 reference agents
+  (`AutonomousDeviceAgent`, `DataAnalystAgent`, `AutonomousCodingAgent`,
+  `BenchAgent`, `GeneralMobileAgent`), object heap, CodeAct execution,
+  programmable loop, pluggable execution strategies (ReAct, CodeAct,
+  Plan-and-Solve, Self-Reflection), two-way procedural skills (`nooa-skills`),
+  model clients (Gemini, Claude, OpenAI, Ollama, OnDevice/llama.cpp),
+  harnesses (filesystem, network, device, memory, SQLite, MCP, skills),
+  coding tools (shell/file-editor/code-search), cognitive long-term memory
+  (ACT-R activation, owner-gated scoping), SQLite-backed checkpoint storage,
+  AST security guardrails, benchmarking suite, and tracing.
 - `android_mobi_nooa/` — Android/Kotlin library bridging into the Dart core
   via a headless Flutter engine + `MethodChannel` (`MobiNooaBridge.kt`,
   see ADR 0007); `mobi_nooa_bridge/` is the thin, UI-less Flutter shim that
