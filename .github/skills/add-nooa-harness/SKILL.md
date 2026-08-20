@@ -52,14 +52,11 @@ principle list and `AGENTS.md` for repo-wide conventions.
    `mobi_nooa_core/example/`) that calls `context.harness.<fieldName>.<method>()`.
 6. **Wrap large results**: if a harness method can return a large or complex
    object, wrap it with `context.heap.maybeWrap(...)` at the call site
-   instead of returning it inline (NOOA Principle 2 — pass-by-reference).
-7. **Tests**: add/extend a test in `mobi_nooa_core/test/` exercising the new
-   harness directly (construct it, call its methods, assert behavior) —
-   follow the style of `nooa_principles_test.dart`.
-8. **Docs**: if this harness represents a new category of capability (not
-   just a method on an existing one), add a row/mention in `DESIGN.md`'s
-   harness section, and add an ADR under `docs/decisions/` if it introduces
-   a new architectural pattern (e.g. a new native bridge mechanism).
+## 🧪 Test-Driven Development (TDD) Workflow
+
+1. **RED**: Create a test file `mobi_nooa_core/test/<name>_harness_test.dart` exercising the interface methods and edge cases before writing the implementation. Verify the test fails.
+2. **GREEN**: Implement `Default<Name>Harness` and wire into `HarnessApi` until `dart test` passes.
+3. **REFACTOR**: Wrap large/complex outputs with `ObjectHeap.maybeWrap`, ensure no platform-dependent leaks exist in `mobi_nooa_core`, and run `dart analyze`.
 
 ## Validation
 
@@ -73,11 +70,11 @@ Both must pass cleanly before considering the harness complete.
 
 ## Checklist
 
-- [ ] `<name>_harness.dart` created with abstract interface + default impl
-- [ ] Wired into `HarnessApi` (import, field, constructor param)
-- [ ] No `flutter`/`dart:ui`/direct native platform calls inside `mobi_nooa_core`
-- [ ] Agent action added/updated to actually invoke the harness as a tool
-- [ ] Large/complex return values wrapped via `ObjectHeap.maybeWrap`
-- [ ] Unit test added under `mobi_nooa_core/test/`
-- [ ] `dart analyze` and `dart test` pass
-- [ ] `DESIGN.md` / ADR updated if this is architecturally new
+- [ ] **TDD First**: Unit test created under `mobi_nooa_core/test/` before implementation.
+- [ ] `<name>_harness.dart` created with abstract interface + default in-memory/sandboxed impl.
+- [ ] Wired into `HarnessApi` (import, field, constructor param).
+- [ ] No `flutter`/`dart:ui`/direct native platform calls inside `mobi_nooa_core`.
+- [ ] Agent action added/updated to actually invoke the harness as a tool.
+- [ ] Large/complex return values wrapped via `ObjectHeap.maybeWrap`.
+- [ ] `dart analyze` and `dart test` pass.
+- [ ] `DESIGN.md` / ADR updated if this is architecturally new.

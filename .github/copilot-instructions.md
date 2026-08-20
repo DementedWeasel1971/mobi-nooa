@@ -47,8 +47,10 @@ Agents) framework, built for mobile/on-device agentic AI. Two modules:
   raw `ownerId` against the shared `CognitiveMemoryStore`.
 - Checkpoint/resume persistence goes through `AgentCheckpoint` +
   `StateStorageManager`, not ad-hoc serialization.
-- Follow `package:lints/recommended` for Dart; standard Kotlin/Android style
-  for the Gradle module.
+- Adopt a strict Test-Driven Development (TDD) approach (Red -> Green -> Refactor):
+  write or update unit tests in `mobi_nooa_core/test/` or `android_mobi_nooa/src/test/`
+  before implementing new agents, harnesses, strategies, or Kotlin repositories.
+  Use `MockModelClient` for deterministic LLM agent loop testing.
 - After editing Dart code, run `dart analyze` and `dart test` in
   `mobi_nooa_core/`. After editing Kotlin/Gradle code, run `./gradlew build`
   in `android_mobi_nooa/`.

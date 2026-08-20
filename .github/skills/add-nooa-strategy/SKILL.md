@@ -83,8 +83,13 @@ Export in `mobi_nooa_core/lib/mobi_nooa_core.dart` under `// Execution Strategie
 export 'src/strategies/<name>_strategy.dart';
 ```
 
-### 4. Tests
-Add test cases in `mobi_nooa_core/test/strategies_and_storage_test.dart` asserting that the strategy correctly continues the loop or signals completion based on model response outputs.
+---
+
+## 🧪 Test-Driven Development (TDD) Workflow
+
+1. **RED**: Add a unit test in `mobi_nooa_core/test/strategies_and_storage_test.dart` (or dedicated `<name>_strategy_test.dart`) exercising `buildStrategyPrompt` and `processResponse` for both continuation (`continueLoop`) and termination (`finish`) cases before implementing the strategy logic. Verify failure.
+2. **GREEN**: Implement `MyCustomStrategy` until the unit test passes.
+3. **REFACTOR**: Ensure no state mutations leak outside `StrategyStepResult`, verify prompt formatting, and run `dart analyze`.
 
 ---
 
@@ -100,8 +105,8 @@ dart test
 
 ## Checklist
 
+- [ ] **TDD First**: Unit test created with mock `ModelResponse` cases before writing the strategy class.
 - [ ] `<name>_strategy.dart` implements `ExecutionStrategy` contract.
 - [ ] Returns `StrategyStepResult.continueLoop(...)` or `StrategyStepResult.finish(...)`.
 - [ ] Exported in `mobi_nooa_core/lib/mobi_nooa_core.dart`.
-- [ ] Unit tests added in `mobi_nooa_core/test/`.
 - [ ] `dart analyze` and `dart test` pass cleanly.

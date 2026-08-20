@@ -153,6 +153,36 @@ Skills provide deterministic procedural knowledge to ensure consistent outcomes 
 - Transport seam: `MobiNooaBridge.kt` calls `com.mobi.nooa/agent_bridge` -> `mobi_nooa_bridge/lib/main.dart` -> `AgentBridgeDispatcher.handle()`.
 - Native hardware queries: `com.mobi.nooa/device_harness` calls into `DeviceHarnessBridge.kt`.
 
+### 5. Test-Driven Development (TDD) for Agentic AI
+AI developers creating new agents, harnesses, or application workflows must adopt a strict **TDD (Red -> Green -> Refactor)** workflow:
+
+1. **RED (Write Failing Test First)**:
+   - Use `MockModelClient` to simulate multi-step tool calls, thoughts, and answers deterministically without incurring API costs or requiring local weights.
+   - Assert expected tool arguments, state mutations (`getState`), and return payloads before writing implementation code.
+2. **GREEN (Implement Minimum Behavior)**:
+   - Write the agent actions, harness methods, or Kotlin repository logic until `dart test` or `./gradlew test` passes.
+3. **REFACTOR & SECURE**:
+   - Verify security guardrails (`AstGuardrails.validate`, `isPathSafe`), wrap large blobs into `ObjectHeap.maybeWrap`, and ensure static analysis (`dart analyze`, `./gradlew lint`) is 100% clean.
+
+```dart
+// Example Dart Agent TDD Unit Test Pattern
+test('Agent completes triage workflow (TDD)', () async {
+  final mockModel = MockModelClient();
+  mockModel.queueToolCall(
+    toolName: 'getDeviceInfo',
+    arguments: const {},
+    thought: 'Inspecting device battery and thermal status.',
+  );
+  mockModel.queueText('Battery is 85% and charging. System healthy.');
+
+  final agent = Quickstart.createAgent(() => AutonomousDeviceAgent(), model: mockModel);
+  final result = await agent.ellipsis<String>('Check system health');
+
+  expect(result, contains('System healthy'));
+  expect(agent.getState('lastAuditStatus'), equals('passed'));
+});
+```
+
 ## Guardrails
 
 - Do not add a dependency on `flutter`/`dart:ui` to `mobi_nooa_core` — it must

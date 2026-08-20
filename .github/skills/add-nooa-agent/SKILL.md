@@ -108,11 +108,15 @@ If this is a core agent, export it in `mobi_nooa_core/lib/mobi_nooa_core.dart` u
 export 'src/agent/<name>_agent.dart';
 ```
 
-### 7. Automated tests
-Create unit and workflow tests in `mobi_nooa_core/test/<name>_agent_test.dart`:
-- Test action registration and reflector output.
-- Test state transitions via `getStateSnapshot()`.
-- Test dynamic loop execution using `MockModelClient`.
+---
+
+## 🧪 Test-Driven Development (TDD) Workflow
+
+Always write your unit test **before** writing the agent implementation:
+
+1. **RED**: Create `mobi_nooa_core/test/<name>_agent_test.dart`. Use `MockModelClient` to queue expected tool calls, thoughts, and assertions on agent state (`getState`) and tool parameters. Run `dart test` and verify it fails as expected.
+2. **GREEN**: Implement `NooaAgent` subclass, register actions, and wire lazy tools until `dart test` passes.
+3. **REFACTOR**: Ensure all CodeAct snippets pass `AstGuardrails`, large objects use `ObjectHeap.maybeWrap`, and `dart analyze` reports 0 issues.
 
 ---
 
@@ -130,12 +134,12 @@ Both commands must pass with zero errors and zero warnings.
 
 ## Checklist
 
+- [ ] **TDD First**: Unit test created with `MockModelClient` asserting tool calls & state before implementation.
 - [ ] Subclass extends `NooaAgent` with descriptive `name`, `role`, and `description`.
 - [ ] No synchronous access to `context` inside constructor or `initAgent()` (lazy getters used).
 - [ ] Agent state initialized and mutated exclusively via `setState(...)`/`getState(...)`.
 - [ ] Actions registered with complete `ToolParameter` types and descriptions.
 - [ ] Large results wrapped into `ObjectHeap` (pass-by-reference).
 - [ ] Exported in `mobi_nooa_core/lib/mobi_nooa_core.dart` (if public).
-- [ ] Unit tests added in `mobi_nooa_core/test/`.
 - [ ] `dart analyze` and `dart test` pass cleanly.
 - [ ] `DESIGN.md` / `README.md` updated if introducing a new public agent category.

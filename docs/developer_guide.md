@@ -118,34 +118,77 @@ Step 3: Revise solution until fully confident, then emit "Final Answer: <result>
 
 ---
 
-## 🧪 3. Testing Your Agent
+## 🧪 3. Test-Driven Development (TDD) Workflow
 
-Use `MockModelClient` for deterministic unit and workflow testing:
+In agentic AI engineering, testing non-deterministic LLMs is a common bottleneck. `mobi-nooa` is engineered from the ground up to enable a strict **Test-Driven Development (TDD)** lifecycle (**Red → Green → Refactor**):
+
+### Step 1 (RED): Write the Deterministic Agent Test First
+Before writing a new agent or harness, write a failing unit test in `mobi_nooa_core/test/` using `MockModelClient`. This allows you to simulate exact multi-step tool calls, thoughts, and assertions without connecting to real LLMs or spending API credits:
 
 ```dart
 import 'package:test/test.dart';
 import 'package:mobi_nooa_core/mobi_nooa_core.dart';
 
 void main() {
-  test('SystemAuditorAgent completes audit workflow', () async {
-    final mockModel = MockModelClient();
-    mockModel.queueToolCall(
-      toolName: 'runAudit',
-      arguments: {'includeNetwork': true},
-      thought: 'Running system audit check.',
-    );
-    mockModel.queueText('Audit completed successfully. All systems nominal.');
+  group('SystemAuditorAgent (TDD)', () {
+    test('audits device health and records passed state', () async {
+      // 1. Arrange deterministic mock LLM trajectory
+      final mockModel = MockModelClient();
+      mockModel.queueToolCall(
+        toolName: 'runAudit',
+        arguments: {'includeNetwork': true},
+        thought: 'Checking system battery and connectivity.',
+      );
+      mockModel.queueText('System health check complete: All metrics nominal.');
 
-    final agent = Quickstart.createAgent(
-      () => SystemAuditorAgent(),
-      model: mockModel,
-    );
+      // 2. Instantiate agent with mock client
+      final agent = Quickstart.createAgent(
+        () => SystemAuditorAgent(),
+        model: mockModel,
+      );
 
-    final result = await agent.ellipsis<String>('Perform system audit');
-    expect(result, contains('All systems nominal'));
-    expect(agent.getState('scansCompleted'), equals(1));
-    expect(agent.getState('lastAuditStatus'), equals('passed'));
+      // 3. Act: Run agentic loop
+      final result = await agent.ellipsis<String>('Perform system audit');
+
+      // 4. Assert: Verify result and explicit state mutations
+      expect(result, contains('All metrics nominal'));
+      expect(agent.getState('scansCompleted'), equals(1));
+      expect(agent.getState('lastAuditStatus'), equals('passed'));
+    });
   });
+}
+```
+
+### Step 2 (GREEN): Implement Minimal Logic
+Implement the `NooaAgent` subclass, register actions, and wire lazy tools until `dart test` passes.
+
+### Step 3 (REFACTOR): Security Hardening & Analysis
+- Ensure CodeAct snippets pass `AstGuardrails.validate`.
+- Wrap large return payloads with `ObjectHeap.maybeWrap`.
+- Verify `dart analyze` passes with zero errors and zero warnings.
+
+---
+
+## 📱 4. Kotlin Android TDD & Architecture
+
+When building Android apps on top of `android_mobi_nooa`, use the clean architecture layers (`AgentRepository` and `AgentViewModel`) tested with `kotlinx-coroutines-test`:
+
+### Kotlin TDD Test Pattern
+```kotlin
+@Test
+fun `agentViewModel executes goal and updates state to Success`() = runTest {
+    val repository = FakeAgentRepository()
+    val viewModel = AgentViewModel(repository)
+
+    viewModel.executeGoal(
+        agentName = "AutonomousDeviceAgent",
+        goal = "Triage battery drain",
+        modelConfig = ModelConfig.OnDevice(template = "llama3")
+    )
+
+    // Verify reactive StateFlow transitions
+    val finalState = viewModel.agentState.first { it is AgentState.Success }
+    assertThat((finalState as AgentState.Success).result.output).contains("Battery triage complete")
 }
 ```
 
@@ -153,29 +196,36 @@ void main() {
 
 ## 📱 5. Embedding into an Application
 
-### Pattern A: Android Native Host (Kotlin / Gradle)
+### Pattern A: Android Native Host (Jetpack Compose / ViewModel)
 
-Add `android_mobi_nooa` to your Android app's `build.gradle.kts`:
+In your Android application, inject `AgentRepository` into your UI / `ViewModel`:
 
 ```kotlin
-// In your Android ViewModel / Activity / Service:
-val bridge = MobiNooaBridge(context)
-bridge.initialize()
+class TriageActivity : ComponentActivity() {
+    private val agentViewModel: AgentViewModel by viewModels {
+        AgentViewModelFactory(DefaultAgentRepository(MobiNooaBridge(this)))
+    }
 
-// Run any agent asynchronously in a non-killable Foreground Service
-val request = mapOf(
-    "action" to "runAgentLoop",
-    "agentName" to "AutonomousDeviceAgent",
-    "goal" to "Diagnose battery drain and alert if unplugged",
-    "model" to mapOf(
-        "provider" to "on_device",
-        "template" to "llama3"
-    ),
-    "maxSteps" to 5
-)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            val state by agentViewModel.agentState.collectAsState()
 
-val response = bridge.sendAction(request)
-val result = response["result"]
+            when (val s = state) {
+                is AgentState.Idle -> Button(onClick = {
+                    agentViewModel.executeGoal(
+                        agentName = "AutonomousDeviceAgent",
+                        goal = "Diagnose battery drain and alert if unplugged",
+                        modelConfig = ModelConfig.OnDevice(template = "llama3")
+                    )
+                }) { Text("Run Device Agent") }
+                is AgentState.Running -> CircularProgressIndicator()
+                is AgentState.Success -> Text("Result: ${s.result.output}")
+                is AgentState.Failed -> Text("Error: ${s.error}", color = Color.Red)
+            }
+        }
+    }
+}
 ```
 
 ### Pattern B: Pure Dart CLI / Backend
