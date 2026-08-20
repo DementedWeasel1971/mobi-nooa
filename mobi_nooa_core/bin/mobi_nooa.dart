@@ -34,6 +34,8 @@ void main(List<String> arguments) async {
     ..addOption('model', abbr: 'm', defaultsTo: 'nvidia', help: 'Model backend: nvidia | gemini | openai | mock')
     ..addOption('prompt', abbr: 'p', help: 'Custom prompt or goal to ask the agent')
     ..addOption('api-key', abbr: 'k', help: 'API Key for remote models')
+    ..addFlag('list-models', abbr: 'l', defaultsTo: false, help: 'Query and list all available models from the provider')
+    ..addOption('filter', abbr: 'f', help: 'Filter substring when listing models')
     ..addFlag('trace', abbr: 't', defaultsTo: false, help: 'Print full JSONL trace at finish')
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show help');
 
@@ -42,6 +44,28 @@ void main(List<String> arguments) async {
   if (results['help'] as bool) {
     print('mobi-nooa: Mobile Object-Oriented Agent Harness CLI\n');
     print(parser.usage);
+    return;
+  }
+
+  if (results['list-models'] as bool) {
+    final apiKey = results['api-key'] as String? ?? env['NVIDIA_API_KEY'] ?? Platform.environment['NVIDIA_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      print('Error: NVIDIA_API_KEY is required to list available models.');
+      exit(1);
+    }
+    final baseUrl = env['NVIDIA_BASE_URL'] ?? 'https://integrate.api.nvidia.com/v1';
+    final filter = (results['filter'] as String?)?.toLowerCase();
+
+    print('Fetching available models from $baseUrl...');
+    final models = await NvidiaClient.fetchModels(apiKey: apiKey, baseUrl: baseUrl);
+    final filtered = filter != null && filter.isNotEmpty
+        ? models.where((m) => m.toLowerCase().contains(filter)).toList()
+        : models;
+
+    print('\n=== Available Models (${filtered.length}/${models.length} total) ===');
+    for (final m in filtered) {
+      print('  • $m');
+    }
     return;
   }
 
