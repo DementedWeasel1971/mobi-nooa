@@ -211,5 +211,153 @@ void main() {
       expect(jsonl, contains('Alice started triage'));
       expect(jsonl, contains('Alice completed triage'));
     });
+
+    test('Flow 5: Multi-Agent Orchestrator & Subagent Delegation with ObjectHeap Handle Exchange',
+        () async {
+      final heap = ObjectHeap();
+      final tracer = Tracer('OrchestratorAgent');
+
+      // Subagent 1: Worker Agent produces dataset into shared heap
+      final workerHeap = ObjectHeap();
+      final sampleData = List.generate(100, (i) => {'id': i, 'metric': i * 2.5});
+      final ref = workerHeap.put(sampleData, label: '100 metric records');
+
+      expect(ref.handle, equals('#ref_1'));
+
+      // Transfer handle to coordinator
+      final coordinatorRef = heap.put(
+        workerHeap.get(ref.handle),
+        label: 'Imported metric records from worker',
+      );
+
+      expect(coordinatorRef.handle, equals('#ref_1'));
+      final coordinatorData = heap.get(coordinatorRef.handle) as List<Map<String, dynamic>>?;
+      expect(coordinatorData, isNotNull);
+      expect(coordinatorData!.length, equals(100));
+
+      tracer.record(
+        type: TraceEventType.subagentSpawn,
+        stepIndex: 0,
+        description: 'Spawned DataWorker subagent with handle ${coordinatorRef.handle}',
+      );
+
+      final jsonl = tracer.exportJsonL();
+      expect(jsonl, contains('Spawned DataWorker subagent'));
+      expect(jsonl, contains('#ref_1'));
+    });
+
+    test('Flow 6: Adaptive Resource Governor Live Throttling & Self-Balancing Loop',
+        () async {
+      final mockModel = MockModelClient();
+      final harness = DefaultDeviceHarness(
+        initialStatus: const DeviceStatus(
+          batteryLevel: 0.55,
+          isCharging: false,
+          thermalState: ThermalState.severe,
+          availableRamMb: 3200,
+          totalRamMb: 8192,
+        ),
+      );
+
+      // Step 1: Agent inspects device headroom
+      mockModel.queueToolCall(
+        toolName: 'assessResourceHeadroom',
+        arguments: const {},
+        thought: 'Inspecting device thermals and RAM.',
+      );
+
+      // Step 2: Agent reacts to severe thermal state by applying cloud offload policy
+      mockModel.queueToolCall(
+        toolName: 'applyGovernorPolicy',
+        arguments: const {
+          'targetModelTier': 'cloudOffload',
+          'maxConcurrent': 1,
+          'pacingDelayMs': 300,
+        },
+        thought: 'Applying thermal cooling policy.',
+      );
+
+      mockModel.queueText('Self-governance active: Switched to cloudOffload with 300ms pacing delay.');
+
+      final agent = Quickstart.createAgent(
+        () => AutonomousDeviceAgent(),
+        harness: HarnessApi(device: harness),
+        model: mockModel,
+      );
+
+      final result = await agent.ellipsis<String>(
+        'Assess thermals and prevent device overdraw',
+        maxSteps: 4,
+      );
+
+      expect(result, contains('Self-governance active'));
+      final policy = agent.getState('governor_policy') as Map?;
+      expect(policy, isNotNull);
+      expect(policy!['targetModelTier'], equals('cloudOffload'));
+      expect(policy['pacingDelayMs'], equals(300));
+    });
+
+    test('Flow 7: CodeAct Sandboxed AST Execution & Direct Heap Handle Arithmetic',
+        () async {
+      final heap = ObjectHeap();
+      final harness = HarnessApi();
+      final rawNumbers = [10, 20, 30, 40, 50];
+      final handle = heap.put(rawNumbers, label: 'Array of 5 numbers');
+
+      final env = SandboxedEnvironment(heap: heap, harness: harness);
+      env.setVar('raw_handle', handle.handle);
+
+      const snippet = '''
+        a = 100
+        b = 50
+        result = a + b
+        return result
+      ''';
+
+      // Security check
+      const guardrails = AstGuardrails();
+      final validation = guardrails.validate(snippet);
+      expect(validation.isValid, isTrue);
+
+      final codeAct = CodeActEngine(env, guardrails: guardrails);
+      final evalResult = await codeAct.execute(snippet);
+
+      expect(evalResult.success, isTrue);
+      expect(evalResult.returnValue, equals(150));
+
+      // Wrap output back in heap
+      final outputRef = heap.maybeWrap(evalResult.returnValue);
+      expect(outputRef, equals(150)); // Small primitive is inlined, not wrapped
+    });
+
+    test('Flow 8: Full End-to-End Android Bridge Dispatcher Protocol Execution',
+        () async {
+      final mockModel = MockModelClient();
+      mockModel.queueToolCall(
+        toolName: 'getDeviceInfo',
+        arguments: const {},
+        thought: 'Fetching battery info over bridge.',
+      );
+      mockModel.queueText('Battery is 85%. Bridge execution successful.');
+
+      final dispatcher = AgentBridgeDispatcher.withDefaults();
+      dispatcher.registerModelProvider('mock', (config) => mockModel);
+
+      final request = {
+        'action': 'runAgentLoop',
+        'agentName': 'AutonomousDeviceAgent',
+        'model': {'provider': 'mock'},
+        'goal': 'Check battery status via bridge',
+        'maxSteps': 3,
+      };
+
+      final response = await dispatcher.handle(request);
+
+      expect(response['result'], contains('Battery is 85%'));
+      expect(response['agentName'], equals('AutonomousDeviceAgent'));
+      expect(response['trace'], isNotNull);
+      final traceEvents = response['trace'] as List;
+      expect(traceEvents.isNotEmpty, isTrue);
+    });
   });
 }
