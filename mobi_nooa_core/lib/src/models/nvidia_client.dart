@@ -108,4 +108,43 @@ class NvidiaClient implements ModelClient {
       rawResponse: json,
     );
   }
+
+  /// Queries the NVIDIA NIM endpoint to fetch the list of all available models.
+  Future<List<String>> listAvailableModels() async {
+    return fetchModels(apiKey: apiKey, baseUrl: baseUrl, httpClient: _httpClient);
+  }
+
+  /// Static helper to fetch available model IDs from any NVIDIA NIM / OpenAI-compatible endpoint.
+  static Future<List<String>> fetchModels({
+    required String apiKey,
+    String baseUrl = 'https://integrate.api.nvidia.com/v1',
+    http.Client? httpClient,
+  }) async {
+    final client = httpClient ?? http.Client();
+    final url = Uri.parse('$baseUrl/models');
+
+    final response = await client.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $apiKey',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to query models from NVIDIA endpoint (${response.statusCode}): ${response.body}',
+      );
+    }
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = json['data'] as List? ?? [];
+    final modelIds = <String>[];
+    for (final item in data) {
+      if (item is Map<String, dynamic> && item.containsKey('id')) {
+        modelIds.add(item['id'] as String);
+      }
+    }
+    modelIds.sort();
+    return modelIds;
+  }
 }
