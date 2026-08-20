@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'skill_store.dart';
+import '../security/ast_guardrails.dart';
 
-/// Enhances agent prompts by dynamically matching and injecting relevant procedural skills.
+/// Enhances agent prompts by dynamically matching and injecting relevant procedural skills
+/// with automatic prompt injection and control token sanitization.
 ///
 /// Implements INBOUND skill injection ("to the agent") to guide model reasoning.
 class SkillPromptEnhancer {
@@ -19,7 +21,8 @@ class SkillPromptEnhancer {
     buffer.writeln('Follow the guidelines below to execute this task reliably:\n');
 
     for (final skill in matched) {
-      buffer.writeln(skill.toPromptMarkdown());
+      final sanitizedMarkdown = AstGuardrails.sanitizePromptText(skill.toPromptMarkdown());
+      buffer.writeln(sanitizedMarkdown);
       buffer.writeln();
     }
 

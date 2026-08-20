@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import '../security/ast_guardrails.dart';
 
 /// Execution output from a shell invocation.
 class ShellExecutionResult {
@@ -29,13 +30,9 @@ class ShellExecutionResult {
       };
 
   @override
-  String toString() {
-    final buffer = StringBuffer();
-    if (stdout.isNotEmpty) buffer.writeln(stdout);
-    if (stderr.isNotEmpty) buffer.writeln('STDERR: $stderr');
-    buffer.writeln('[Exit code: $exitCode]');
-    return buffer.toString().trim();
-  }
+  String toString() => stdout.isNotEmpty && stderr.isEmpty
+      ? stdout
+      : (stderr.isNotEmpty ? '$stdout\nSTDERR: $stderr' : '[Exit code: $exitCode]');
 }
 
 /// Abstract Shell Harness supporting both native OS process execution and simulated in-memory shells.
@@ -47,16 +44,19 @@ abstract class ShellHarness {
   });
 }
 
-/// Local/Mobile OS process shell runner.
+/// Local/Mobile OS process shell runner with AST security guardrails.
 class LocalShellHarness implements ShellHarness {
   @override
   String workingDirectory;
   final int maxOutputChars;
+  final AstGuardrails guardrails;
 
   LocalShellHarness({
     String? initialWorkingDirectory,
     this.maxOutputChars = 50000,
-  }) : workingDirectory = initialWorkingDirectory ?? Directory.current.path;
+    AstGuardrails? guardrails,
+  })  : workingDirectory = initialWorkingDirectory ?? Directory.current.path,
+        guardrails = guardrails ?? const AstGuardrails();
 
   @override
   Future<ShellExecutionResult> execute(
@@ -64,6 +64,18 @@ class LocalShellHarness implements ShellHarness {
     Duration timeout = const Duration(seconds: 60),
   }) async {
     final stopwatch = Stopwatch()..start();
+
+    // 1. Enforce AST Guardrails on command string to prevent command injection / dangerous attacks
+    final validation = guardrails.validate(command);
+    if (!validation.isValid) {
+      stopwatch.stop();
+      return ShellExecutionResult(
+        exitCode: 1,
+        stdout: '',
+        stderr: 'Command rejected by AstGuardrails: ${validation.violations.join("; ")}',
+        duration: stopwatch.elapsed,
+      );
+    }
 
     // Check for cd command
     final trimmed = command.trim();

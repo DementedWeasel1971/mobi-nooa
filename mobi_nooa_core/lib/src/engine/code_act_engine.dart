@@ -1,7 +1,7 @@
 import 'sandboxed_environment.dart';
 import 'ast_evaluator.dart';
-import '../heap/object_heap.dart';
 import '../heap/object_reference.dart';
+import '../security/ast_guardrails.dart';
 
 /// Result of executing a CodeAct snippet.
 class CodeActResult {
@@ -47,20 +47,37 @@ class CodeActResult {
   String toString() => toPromptOutput();
 }
 
-/// Mobile CodeAct execution engine.
+/// Mobile CodeAct execution engine with defense-in-depth AST security guardrails.
 ///
 /// Implements NOOA Principle 3: "Code as action (CodeAct)".
 class CodeActEngine {
   final SandboxedEnvironment environment;
+  final AstGuardrails guardrails;
   final AstEvaluator _evaluator;
 
-  CodeActEngine(this.environment) : _evaluator = AstEvaluator(environment);
+  CodeActEngine(
+    this.environment, {
+    AstGuardrails? guardrails,
+  })  : guardrails = guardrails ?? const AstGuardrails(),
+        _evaluator = AstEvaluator(environment);
 
-  /// Executes code extracted from LLM responses and wraps complex returns into [ObjectHeap].
+  /// Executes code extracted from LLM responses after verifying AST guardrails.
   Future<CodeActResult> execute(String codeSnippet) async {
     final cleanCode = extractCodeBlock(codeSnippet);
     final stopwatch = Stopwatch()..start();
     environment.stdout.clear();
+
+    // 1. Enforce AST Security Guardrails before evaluation
+    final validation = guardrails.validate(cleanCode);
+    if (!validation.isValid) {
+      stopwatch.stop();
+      return CodeActResult(
+        success: false,
+        error: 'Security Guardrails Violation: ${validation.violations.join("; ")}',
+        stdout: [],
+        executionDuration: stopwatch.elapsed,
+      );
+    }
 
     try {
       final rawResult = _evaluator.executeScript(cleanCode);

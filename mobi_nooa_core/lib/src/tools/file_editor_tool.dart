@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../harness/filesystem_harness.dart';
+import '../security/ast_guardrails.dart';
 
 /// Result of a file editor operation.
 class FileEditorResult {
@@ -23,7 +24,8 @@ class FileEditorResult {
   String toString() => success ? output : 'Error: $error\n$output';
 }
 
-/// Robust file editing tool suite used by BenchAgent and mobile coding agents.
+/// Robust file editing tool suite used by BenchAgent and mobile coding agents
+/// with built-in path traversal security guardrails.
 class FileEditorTool {
   final FileSystemHarness fs;
   final int maxViewLines;
@@ -40,6 +42,14 @@ class FileEditorTool {
     int? endLine,
   }) async {
     try {
+      if (!AstGuardrails.isPathSafe(path)) {
+        return FileEditorResult(
+          success: false,
+          output: '',
+          error: 'Security Error: Path traversal attempt detected in "$path".',
+        );
+      }
+
       if (!await fs.exists(path)) {
         return FileEditorResult(
           success: false,
@@ -93,6 +103,14 @@ class FileEditorTool {
     required String newStr,
   }) async {
     try {
+      if (!AstGuardrails.isPathSafe(path)) {
+        return FileEditorResult(
+          success: false,
+          output: '',
+          error: 'Security Error: Path traversal attempt detected in "$path".',
+        );
+      }
+
       if (!await fs.exists(path)) {
         return FileEditorResult(
           success: false,
@@ -142,6 +160,14 @@ class FileEditorTool {
     required String content,
   }) async {
     try {
+      if (!AstGuardrails.isPathSafe(path)) {
+        return FileEditorResult(
+          success: false,
+          output: '',
+          error: 'Security Error: Path traversal attempt detected in "$path".',
+        );
+      }
+
       await fs.writeFile(path, content);
       return FileEditorResult(
         success: true,
