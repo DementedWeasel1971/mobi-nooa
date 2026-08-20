@@ -1,13 +1,16 @@
 package com.mobi.nooa
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.CoroutineScope
@@ -105,7 +108,9 @@ class MobiNooaService : Service() {
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setAutoCancel(true)
 
-        NotificationManagerCompat.from(this).notify(NOTIFICATION_ID + 1, builder.build())
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            NotificationManagerCompat.from(this).notify(NOTIFICATION_ID + 1, builder.build())
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

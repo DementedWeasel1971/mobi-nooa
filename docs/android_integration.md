@@ -79,3 +79,44 @@ For completely offline execution without cloud APIs, `OnDeviceModelEngine` imple
 
 4. **Lifecycle & Memory Safeguards**:
    - Automatically sheds KV-cache and cancels workloads upon Android OS critical memory pressure (`ComponentCallbacks2.onTrimMemory`).
+
+---
+
+## 🏛️ 5. Modern Kotlin Architecture & Jetpack Compose Bindings
+
+`android_mobi_nooa` follows standard Google Android Architecture Guidelines with clean Domain, Data, and Presentation layers:
+
+### A. Domain Layer (`AgentRepository` & `AgentState`)
+```kotlin
+// Inject repository into your ViewModels / UseCases
+val repository: AgentRepository = DefaultAgentRepository(MobiNooaBridge.getInstance(context))
+
+// Observe reactive state
+lifecycleScope.launch {
+    repository.agentState.collect { state ->
+        when (state) {
+            is AgentState.Idle -> showIdleState()
+            is AgentState.Running -> showProgress(state.currentStep, state.maxSteps)
+            is AgentState.Success -> renderResult(state.result.resultText)
+            is AgentState.Failed -> showError(state.error)
+        }
+    }
+}
+```
+
+### B. Presentation Layer (`AgentViewModel`)
+```kotlin
+class MyAgentScreenViewModel(
+    private val agentViewModel: AgentViewModel
+) : ViewModel() {
+    val uiState: StateFlow<AgentState> = agentViewModel.agentState
+
+    fun runTriage() {
+        agentViewModel.executeTask(
+            agentName = "AutonomousDeviceAgent",
+            goal = "Triage battery drain and inspect background processes",
+            modelConfig = ModelConfig.OnDevice(template = "llama3")
+        )
+    }
+}
+```
