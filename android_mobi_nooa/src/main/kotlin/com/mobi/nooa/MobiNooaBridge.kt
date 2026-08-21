@@ -142,6 +142,43 @@ class MobiNooaBridge private constructor(context: Context) {
     suspend fun getLatestCheckpoint(agentName: String): Map<String, Any?> =
         invoke(mapOf("action" to "getLatestCheckpoint", "agentName" to agentName))
 
+    /** Synthesizes a recorded session event log into a permanent procedural skill (/skillify). */
+    suspend fun skillifySession(sessionId: String, skillName: String? = null): Map<String, Any?> =
+        invoke(mapOf(
+            "action" to "skillifySession",
+            "sessionId" to sessionId,
+            "skillName" to skillName
+        ))
+
+    /** Concurrently executes an 8-way batch of parallel subagents with isolated workspaces. */
+    suspend fun runParallelSubagents(
+        tasks: List<Map<String, Any?>>,
+        maxConcurrency: Int = 8
+    ): Map<String, Any?> =
+        invoke(mapOf(
+            "action" to "runParallelSubagents",
+            "tasks" to tasks,
+            "maxConcurrency" to maxConcurrency
+        ))
+
+    /** Generates a structured execution plan with diff previews and approval gates (Plan-First Mode). */
+    suspend fun createPlan(
+        goal: String,
+        steps: List<Map<String, Any?>>
+    ): Map<String, Any?> =
+        invoke(mapOf(
+            "action" to "createPlan",
+            "goal" to goal,
+            "steps" to steps
+        ))
+
+    /** Processes an Agent Client Protocol (ACP) JSON-RPC 2.0 wire request. */
+    suspend fun handleAcp(message: Map<String, Any?>): Map<String, Any?> =
+        invoke(mapOf(
+            "action" to "acp",
+            "message" to message
+        ))
+
     private suspend fun invoke(request: Map<String, Any?>): Map<String, Any?> =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
             suspendCancellableCoroutine { continuation ->
