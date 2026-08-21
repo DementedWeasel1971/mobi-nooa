@@ -1,12 +1,11 @@
 <resources>
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#00E5FF</item>
-        <item name="colorPrimaryDark">#0B0C0E</item>
-        <item name="colorAccent">#00E5FF</item>
-        <item name="colorSecondary">#00E676</item>
-        <item name="android:windowBackground">#0B0C0E</item>
-        <item name="android:textColorPrimary">#F0F3F6</item>
-        <item name="android:textColorSecondary">#8E9AA8</item>
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorPrimaryDark">@color/color_background</item>
+        <item name="colorAccent">@color/color_primary</item>
+        <item name="colorSecondary">@color/color_secondary</item>
+        <item name="android:windowBackground">@color/color_background</item>
+        <item name="android:textColorPrimary">@color/color_text_primary</item>
+        <item name="android:textColorSecondary">@color/color_text_secondary</item>
     </style>
 </resources>
-

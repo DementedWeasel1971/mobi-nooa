@@ -46,7 +46,8 @@
             android:id="@+id/tvEngineStatusBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="● READY"
+            android:text="READY"
+            android:contentDescription="Engine status: ready"
             android:textColor="#00E676"
             android:textSize="11sp"
             android:textStyle="bold"
@@ -59,12 +60,14 @@
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
-        android:layout_height="44dp"
+        android:layout_height="48dp"
         android:background="#12141A"
         app:tabIndicatorColor="#00E5FF"
+        app:tabIconTint="@color/tab_icon_tint"
         app:tabSelectedTextColor="#00E5FF"
         app:tabTextColor="#8E9AA8"
         app:tabMode="scrollable"
+        app:tabMinWidth="72dp"
         app:tabTextAppearance="@android:style/TextAppearance.Small" />
 
     <View
@@ -113,7 +116,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="🔋 100% Nominal"
+                        android:text="Battery: 100% Nominal"
                         android:textColor="#F0F3F6"
                         android:textSize="11sp"
                         android:background="#16181D"
@@ -125,7 +128,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="🧠 RAM: Introspecting"
+                        android:text="RAM: Introspecting"
                         android:textColor="#F0F3F6"
                         android:textSize="11sp"
                         android:background="#16181D"
@@ -137,7 +140,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="❄️ Nominal"
+                        android:text="Thermal: Nominal"
                         android:textColor="#00E676"
                         android:textSize="11sp"
                         android:background="#16181D"
@@ -160,13 +163,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
+                    android:contentDescription="Agent operating mode"
                     android:layout_marginTop="6dp"
                     android:layout_marginBottom="16dp">
 
                     <RadioButton
                         android:id="@+id/rbModeAutonomous"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="48dp"
                         android:layout_weight="1"
                         android:text="Autonomous"
                         android:textColor="#F0F3F6"
@@ -176,7 +180,7 @@
                     <RadioButton
                         android:id="@+id/rbModeSupervised"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="48dp"
                         android:layout_weight="1"
                         android:text="Supervised"
                         android:textColor="#F0F3F6"
@@ -185,7 +189,7 @@
                     <RadioButton
                         android:id="@+id/rbModeAudit"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="48dp"
                         android:layout_weight="1"
                         android:text="Audit Log"
                         android:textColor="#F0F3F6"
@@ -314,7 +318,10 @@
                     android:id="@+id/etStreamGoal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:minHeight="96dp"
                     android:minLines="2"
+                    android:gravity="top|start"
+                    android:hint="Describe the task to run"
                     android:text="Triage device battery, RAM headroom, and thermal health."
                     android:textColor="#F0F3F6"
                     android:textSize="13sp"
@@ -334,7 +341,7 @@
                         android:layout_width="0dp"
                         android:layout_height="50dp"
                         android:layout_weight="1"
-                        android:text="▶ EXECUTE AGENT LOOP"
+                        android:text="EXECUTE AGENT LOOP"
                         android:textColor="#0B0C0E"
                         android:textStyle="bold"
                         android:backgroundTint="#00E5FF"
@@ -345,7 +352,7 @@
                         android:id="@+id/tvAstSecurityPill"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🛡️ AST Guard: PASS"
+                        android:text="AST Guard: PASS"
                         android:textColor="#00E676"
                         android:textSize="11sp"
                         android:background="#162E24"
@@ -368,7 +375,7 @@
                     android:id="@+id/tvStreamFallbackBanner"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="⚠️ Provider failover: Cascading to secondary provider..."
+                    android:text="Provider failover: Cascading to secondary provider..."
                     android:textColor="#FF9100"
                     android:textSize="11sp"
                     android:background="#2E1E16"
@@ -389,15 +396,19 @@
                     <LinearLayout
                         android:id="@+id/headerDeepSeekThinking"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="48dp"
                         android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:gravity="center_vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:contentDescription="Toggle DeepSeek reasoning details">
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="🧠 DeepSeek-R1 Reasoning &lt;think&gt;"
+                            android:text="DeepSeek-R1 Reasoning &lt;think&gt;"
                             android:textColor="#00E5FF"
                             android:textStyle="bold"
                             android:textSize="12sp" />
@@ -505,9 +516,12 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="48dp"
                         android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:gravity="center_vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="Toggle DeepSeek reasoning details">
 
                         <TextView
                             android:layout_width="0dp"
@@ -643,7 +657,8 @@
                 <EditText
                     android:id="@+id/etDynamicToolName"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
+                    android:layout_height="48dp"
+                    android:hint="Tool name"
                     android:text="calculateTax"
                     android:textColor="#F0F3F6"
                     android:textSize="13sp"
@@ -699,7 +714,8 @@
                 <EditText
                     android:id="@+id/etSessionId"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
+                    android:layout_height="48dp"
+                    android:hint="Session ID"
                     android:text="session_live_01"
                     android:textColor="#F0F3F6"
                     android:textSize="13sp"
@@ -735,9 +751,9 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSessionReplay"
                         android:layout_width="0dp"
-                        android:layout_height="44dp"
+                        android:layout_height="48dp"
                         android:layout_weight="1"
-                        android:text="⏪ Replay Step"
+                        android:text="Replay Step"
                         android:textColor="#0B0C0E"
                         android:textStyle="bold"
                         android:backgroundTint="#00E5FF"
@@ -747,9 +763,9 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSessionFork"
                         android:layout_width="0dp"
-                        android:layout_height="44dp"
+                        android:layout_height="48dp"
                         android:layout_weight="1.2"
-                        android:text="⚡ Fork Branch"
+                        android:text="Fork Branch"
                         android:textColor="#0B0C0E"
                         android:textStyle="bold"
                         android:backgroundTint="#FFB300"
@@ -819,7 +835,7 @@
                         android:id="@+id/tvGovRamPressure"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="🧠 RAM Pressure: NOMINAL (2.4 GB / 8.0 GB)"
+                        android:text="RAM Pressure: NOMINAL (2.4 GB / 8.0 GB)"
                         android:textColor="#F0F3F6"
                         android:textSize="12sp" />
 
@@ -827,7 +843,7 @@
                         android:id="@+id/tvGovThermalState"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="🌡️ Thermal State: NOMINAL (28.5°C)"
+                        android:text="Thermal State: NOMINAL (28.5°C)"
                         android:textColor="#00E676"
                         android:textSize="12sp"
                         android:layout_marginTop="6dp" />
@@ -836,7 +852,7 @@
                         android:id="@+id/tvGovBattery"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="🔋 Battery: 100% · Status: DISCHARGING"
+                        android:text="Battery: 100% · Status: DISCHARGING"
                         android:textColor="#F0F3F6"
                         android:textSize="12sp"
                         android:layout_marginTop="6dp" />
@@ -845,7 +861,7 @@
                         android:id="@+id/tvGovNetwork"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="📶 Network: WIFI (Connected)"
+                        android:text="Network: WIFI (Connected)"
                         android:textColor="#F0F3F6"
                         android:textSize="12sp"
                         android:layout_marginTop="6dp" />
@@ -886,7 +902,7 @@
                         android:layout_width="0dp"
                         android:layout_height="48dp"
                         android:layout_weight="1"
-                        android:text="🧹 Compact Heap"
+                        android:text="Compact Heap"
                         android:textColor="#0B0C0E"
                         android:textStyle="bold"
                         android:backgroundTint="#00E5FF"
@@ -898,7 +914,7 @@
                         android:layout_width="0dp"
                         android:layout_height="48dp"
                         android:layout_weight="1"
-                        android:text="🔄 Refresh Metrics"
+                        android:text="Refresh Metrics"
                         android:textColor="#0B0C0E"
                         android:textStyle="bold"
                         android:backgroundTint="#00E676"
@@ -909,4 +925,3 @@
         </ScrollView>
     </FrameLayout>
 </LinearLayout>
-

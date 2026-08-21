@@ -14,6 +14,7 @@ import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.tabs.TabLayout
@@ -126,10 +127,15 @@ class MainActivity : AppCompatActivity() {
 
         initDependencies()
         bindViews()
-        setupTabs()
+        setupTabs(savedInstanceState?.getInt(KEY_SELECTED_TAB, 0) ?: 0)
         setupSpinners()
         setupListeners()
         observeAllViewModels()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt(KEY_SELECTED_TAB, tabLayout.selectedTabPosition.coerceAtLeast(0))
+        super.onSaveInstanceState(outState)
     }
 
     private fun initDependencies() {
@@ -199,12 +205,22 @@ class MainActivity : AppCompatActivity() {
         btnGovRefresh = findViewById(R.id.btnGovRefresh)
     }
 
-    private fun setupTabs() {
-        tabLayout.addTab(tabLayout.newTab().setText("🌐 Hub"))
-        tabLayout.addTab(tabLayout.newTab().setText("⚡ Stream"))
-        tabLayout.addTab(tabLayout.newTab().setText("🧩 Plugins"))
-        tabLayout.addTab(tabLayout.newTab().setText("⏳ Time-Travel"))
-        tabLayout.addTab(tabLayout.newTab().setText("🛡️ Governor"))
+    private fun setupTabs(initialTab: Int) {
+        val tabs = listOf(
+            Triple(R.drawable.ic_tab_hub, "Hub", "Agent hub"),
+            Triple(R.drawable.ic_tab_stream, "Stream", "Execution stream"),
+            Triple(R.drawable.ic_tab_plugins, "Plugins", "Agent plugins"),
+            Triple(R.drawable.ic_tab_session, "Sessions", "Session history"),
+            Triple(R.drawable.ic_tab_governor, "Governor", "Resource governor")
+        )
+        tabs.forEach { (icon, label, description) ->
+            tabLayout.addTab(
+                tabLayout.newTab()
+                    .setIcon(ContextCompat.getDrawable(this, icon))
+                    .setText(label)
+                    .setContentDescription(description)
+            )
+        }
 
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
@@ -217,6 +233,8 @@ class MainActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+
+        tabLayout.getTabAt(initialTab.coerceIn(0, tabs.lastIndex))?.select()
     }
 
     private fun setupSpinners() {
@@ -270,8 +288,15 @@ class MainActivity : AppCompatActivity() {
         // Plugins: Dynamic Tool Registration Seam
         btnRegisterDynamicTool.setOnClickListener {
             val toolName = etDynamicToolName.text.toString().trim()
-            if (toolName.isNotEmpty()) {
-                tvDynamicToolStatus.text = "✓ Dynamic tool '$toolName' successfully injected into PluginRegistry.\nAST Guardrail: VALIDATED."
+            if (toolName.isEmpty()) {
+                etDynamicToolName.error = "Enter a tool name"
+                tvDynamicToolStatus.text = "Add a name before registering a dynamic tool."
+                tvDynamicToolStatus.announceForAccessibility("Add a name before registering a dynamic tool")
+                etDynamicToolName.requestFocus()
+            } else {
+                etDynamicToolName.error = null
+                tvDynamicToolStatus.text = "Dynamic tool '$toolName' injected into PluginRegistry.\nAST Guardrail: VALIDATED."
+                tvDynamicToolStatus.announceForAccessibility("Dynamic tool $toolName registered")
             }
         }
 
@@ -282,20 +307,20 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                val sessionId = etSessionId.text.toString().trim()
+                val sessionId = sessionIdOrNull() ?: return
                 val step = seekBar?.progress ?: 0
                 timelineViewModel.scrubToStep(sessionId, step)
             }
         })
 
         btnSessionReplay.setOnClickListener {
-            val sessionId = etSessionId.text.toString().trim()
+            val sessionId = sessionIdOrNull() ?: return@setOnClickListener
             val step = sbSessionScrubber.progress
             timelineViewModel.scrubToStep(sessionId, step)
         }
 
         btnSessionFork.setOnClickListener {
-            val sessionId = etSessionId.text.toString().trim()
+            val sessionId = sessionIdOrNull() ?: return@setOnClickListener
             val step = sbSessionScrubber.progress
             val forkId = "${sessionId}_branch_${System.currentTimeMillis() % 1000}"
             timelineViewModel.forkBranch(sessionId, forkId, step)
@@ -320,9 +345,13 @@ class MainActivity : AppCompatActivity() {
         val goal = etStreamGoal.text.toString().trim()
 
         if (goal.isEmpty()) {
-            tvStreamConsole.text = "Error: Task goal cannot be empty."
+            etStreamGoal.error = "Enter a task goal"
+            tvStreamConsole.text = "Enter a task goal before starting the agent loop."
+            etStreamGoal.announceForAccessibility("Enter a task goal")
+            etStreamGoal.requestFocus()
             return
         }
+        etStreamGoal.error = null
 
         val primaryConfig: ModelConfig = when (provider) {
             "nvidia" -> ModelConfig.Nvidia(modelName = modelName, apiKey = apiKey)
@@ -353,13 +382,16 @@ class MainActivity : AppCompatActivity() {
             else -> AgentOperatingMode.AUTONOMOUS
         }
 
-        tvStreamConsole.text = "⚡ Launching $agentName...\nProvider: $provider\nModel: $modelName (with automated fallback cascade)\nMode: $selectedMode\nGoal: $goal\n\nStarting loop..."
+        tvStreamConsole.text = "Launching $agentName...\nProvider: $provider\nModel: $modelName (with automated fallback cascade)\nMode: $selectedMode\nGoal: $goal\n\nStarting loop..."
         btnStreamExecute.isEnabled = false
+        btnStreamExecute.text = "RUNNING..."
         pbStreamProgress.visibility = View.VISIBLE
         tvStreamFallbackBanner.visibility = View.GONE
-        tvEngineStatusBadge.text = "● RUNNING"
-        tvEngineStatusBadge.setTextColor(0xFF00E5FF.toInt())
-        tvEngineStatusBadge.setBackgroundColor(0xFF101C24.toInt())
+        setEngineStatus(
+            label = "RUNNING",
+            textColor = R.color.color_primary,
+            backgroundColor = R.color.color_surface_header
+        )
 
         agentViewModel.executeTask(
             agentName = agentName,
@@ -369,22 +401,25 @@ class MainActivity : AppCompatActivity() {
         ) { result ->
             runOnUiThread {
                 btnStreamExecute.isEnabled = true
+                btnStreamExecute.text = "EXECUTE AGENT LOOP"
                 pbStreamProgress.visibility = View.GONE
-                tvEngineStatusBadge.text = "● READY"
-                tvEngineStatusBadge.setTextColor(0xFF00E676.toInt())
-                tvEngineStatusBadge.setBackgroundColor(0xFF162E24.toInt())
 
                 result.fold(
                     onSuccess = { execResult ->
+                        setEngineStatus(
+                            label = "READY",
+                            textColor = R.color.color_secondary,
+                            backgroundColor = R.color.color_surface
+                        )
                         val sb = StringBuilder()
                         sb.append("========================================\n")
-                        sb.append("✓ EXECUTION COMPLETE (${execResult.durationMs}ms, ${execResult.stepCount} steps)\n")
+                        sb.append("EXECUTION COMPLETE (${execResult.durationMs}ms, ${execResult.stepCount} steps)\n")
                         sb.append("========================================\n\n")
                         sb.append("AGENT RESULT:\n")
                         sb.append(execResult.resultText).append("\n\n")
 
                         if (execResult.fallbackHistory.isNotEmpty()) {
-                            sb.append("⚠️ PROVIDER FAILOVER / FALLBACK HISTORY:\n")
+                            sb.append("PROVIDER FAILOVER / FALLBACK HISTORY:\n")
                             for (fb in execResult.fallbackHistory) {
                                 sb.append("  • [${fb.type}] ${fb.failedProvider} -> ${fb.fallbackProvider ?: "recovered"}: ${fb.errorMessage}\n")
                             }
@@ -407,7 +442,13 @@ class MainActivity : AppCompatActivity() {
                         tvStreamConsole.text = sb.toString()
                     },
                     onFailure = { error ->
-                        tvStreamConsole.text = "✗ EXECUTION FAILED:\n${error.message}\n\nStack:\n${error.stackTraceToString()}"
+                        setEngineStatus(
+                            label = "ERROR",
+                            textColor = R.color.color_error,
+                            backgroundColor = R.color.color_surface
+                        )
+                        val message = error.message ?: "The agent loop returned an unknown error."
+                        tvStreamConsole.text = "EXECUTION FAILED\n\n$message\n\nRecovery: check the provider settings or switch to on-device/mock, then retry."
                     }
                 )
             }
@@ -419,9 +460,9 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             hubViewModel.uiState.collect { state ->
                 state.telemetry?.let { tel ->
-                    tvHubBattery.text = "🔋 ${tel.batteryLevel.toInt()}% ${if (tel.isCharging) "Charging" else "Nominal"}"
-                    tvHubRam.text = "🧠 RAM: ${(tel.availableRamMb / 1024.0).format(1)}GB Free"
-                    tvHubThermal.text = "🌡️ Thermal: ${tel.thermalStatus}"
+                    tvHubBattery.text = "Battery: ${tel.batteryLevel.toInt()}% ${if (tel.isCharging) "Charging" else "Nominal"}"
+                    tvHubRam.text = "RAM: ${(tel.availableRamMb / 1024.0).format(1)}GB Free"
+                    tvHubThermal.text = "Thermal: ${tel.thermalStatus}"
                 }
             }
         }
@@ -443,16 +484,22 @@ class MainActivity : AppCompatActivity() {
             agentViewModel.agentState.collect { state ->
                 when (state) {
                     is AgentState.Running -> {
-                        tvStreamConsole.text = "▶ RUNNING: ${state.agentName}\nStep: ${state.currentStep}/${state.maxSteps}\nGoal: ${state.goal}\n" +
+                        tvStreamConsole.text = "RUNNING: ${state.agentName}\nStep: ${state.currentStep}/${state.maxSteps}\nGoal: ${state.goal}\n" +
                             (state.latestThought?.let { "\nThought: $it\n" } ?: "")
                         state.latestThought?.let {
                             tvDeepSeekThoughts.text = it
                         }
                     }
                     is AgentState.Failed -> {
-                        tvStreamConsole.text = "✗ Agent Execution Error:\n${state.error}"
+                        tvStreamConsole.text = "AGENT EXECUTION ERROR\n\n${state.error}\n\nRecovery: review the goal and provider settings, then retry."
                         btnStreamExecute.isEnabled = true
+                        btnStreamExecute.text = "EXECUTE AGENT LOOP"
                         pbStreamProgress.visibility = View.GONE
+                        setEngineStatus(
+                            label = "ERROR",
+                            textColor = R.color.color_error,
+                            backgroundColor = R.color.color_surface
+                        )
                     }
                     else -> {}
                 }
@@ -471,7 +518,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 state.forkedSessionId?.let { forkId ->
-                    tvSessionStateSnapshot.text = "⚡ New Session Branch Forked!\nBranch Session ID: $forkId\nParent Step: ${state.selectedStepIndex}"
+                    tvSessionStateSnapshot.text = "NEW SESSION BRANCH FORKED\nBranch Session ID: $forkId\nParent Step: ${state.selectedStepIndex}"
                 }
             }
         }
@@ -480,10 +527,10 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             governorViewModel.uiState.collect { state ->
                 state.telemetry?.let { tel ->
-                    tvGovRamPressure.text = "🧠 RAM: ${tel.availableRamMb}MB free / ${tel.totalRamMb}MB total (${tel.ramUsagePercent}% used)"
-                    tvGovThermalState.text = "🌡️ Thermal Status: ${tel.thermalStatus.uppercase()}"
-                    tvGovBattery.text = "🔋 Battery: ${tel.batteryLevel.toInt()}% · ${if (tel.isCharging) "CHARGING" else "DISCHARGING"}"
-                    tvGovNetwork.text = "📶 Network: ${tel.networkStatus.uppercase()} (Connected)"
+                    tvGovRamPressure.text = "RAM: ${tel.availableRamMb}MB free / ${tel.totalRamMb}MB total (${tel.ramUsagePercent}% used)"
+                    tvGovThermalState.text = "Thermal Status: ${tel.thermalStatus.uppercase()}"
+                    tvGovBattery.text = "Battery: ${tel.batteryLevel.toInt()}% · ${if (tel.isCharging) "CHARGING" else "DISCHARGING"}"
+                    tvGovNetwork.text = "Network: ${tel.networkStatus.uppercase()} (Connected)"
                 }
 
                 state.budget?.let { budget ->
@@ -491,13 +538,33 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 if (state.isCompactingHeap) {
-                    tvGovBudgetSummary.text = "🧹 Heap compaction in progress... Reclaiming inactive #ref handles."
+                    tvGovBudgetSummary.text = "Heap compaction in progress... Reclaiming inactive #ref handles."
                 }
             }
         }
     }
 
+    private fun setEngineStatus(label: String, textColor: Int, backgroundColor: Int) {
+        tvEngineStatusBadge.text = label
+        tvEngineStatusBadge.contentDescription = "Engine status: ${label.lowercase()}"
+        tvEngineStatusBadge.setTextColor(ContextCompat.getColor(this, textColor))
+        tvEngineStatusBadge.setBackgroundColor(ContextCompat.getColor(this, backgroundColor))
+    }
+
+    private fun sessionIdOrNull(): String? {
+        val sessionId = etSessionId.text.toString().trim()
+        if (sessionId.isEmpty()) {
+            etSessionId.error = "Enter a session ID"
+            etSessionId.requestFocus()
+            return null
+        }
+        etSessionId.error = null
+        return sessionId
+    }
+
     private fun Double.format(digits: Int) = String.format("%.${digits}f", this)
+
+    private companion object {
+        const val KEY_SELECTED_TAB = "selected_tab"
+    }
 }
-
-
