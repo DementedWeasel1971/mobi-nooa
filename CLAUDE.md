@@ -16,14 +16,14 @@ flutter analyze
 flutter test
 
 # Android Native Kotlin: JVM Unit tests
-cd ../android_mobi_nooa
-./gradlew :android_mobi_nooa:testDebugUnitTest
+cd ..
+.\gradlew.bat :android_mobi_nooa:testDebugUnitTest
 
 # Full Android APK assembly
-./gradlew :app:assembleDebug
+.\gradlew.bat :app:assembleDebug
 
-# Live On-Device Integration Runner (emulator-5554)
-powershell -ExecutionPolicy Bypass -File scratch/test_device_cascade_permutations.ps1
+# Live On-Device Integration Runner (connected emulator or physical device)
+.\gradlew.bat :android_mobi_nooa:connectedDebugAndroidTest
 ```
 
 ## 📖 Key Rules & Guidelines

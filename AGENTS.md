@@ -66,13 +66,13 @@ flutter pub get
 flutter analyze
 flutter test
 
-# 3. Android Native Library
-cd ../android_mobi_nooa
-./gradlew build       # compile + lint + unit tests
+# 3. Android Native Library (run from repo root on Windows)
+cd ..
+.\gradlew.bat :android_mobi_nooa:build  # compile + lint + unit tests
 
 # 4. Full End-to-End Android APK Build (Kotlin + Flutter bridge + Dart core)
 # Run from repo root (requires local.properties configured):
-./gradlew :app:assembleDebug
+.\gradlew.bat :app:assembleDebug
 ```
 
 ---
@@ -175,7 +175,7 @@ Use `DeviceResourceGovernor` to protect device stability:
 ```
 
 #### Tier 1: Pure In-Memory Core Tests (`mobi_nooa_core/test/`)
-- **Fast & Deterministic**: Zero network calls, zero device dependencies. Executes 110+ tests in under 2 seconds.
+- **Fast & Deterministic**: Zero network calls, zero device dependencies. Executes 120+ tests (currently 121).
 - **Coverage**:
   - **12 Fallback Cascade Permutations** (`test/models/fallback_cascade_client_test.dart`): Nominal primary success, in-tier retries, 503 HTTP failovers, timeouts, 4-tier N-way chains, all-exhausted exceptions, mid-trajectory tool execution failovers, schema preservation, DeepSeek-R1 reasoning content extraction, bridge JSON configuration, single-provider pass-through, and `reset()`.
   - **Reference Agents & Heap** (`test/reference_agents_test.dart`, `test/nooa_principles_test.dart`): All 5 reference agents, `#ref_xxx` handle allocations, LRU cache compaction, and state isolation.
@@ -190,11 +190,10 @@ Use `DeviceResourceGovernor` to protect device stability:
 #### Tier 3: Android Native Kotlin Tests (`android_mobi_nooa/src/test/`)
 - Tests Clean Architecture use cases, UDF MVI ViewModels (`AgentHubViewModel`, `AgentExecutionViewModel`, `SessionTimelineViewModel`, `ResourceGovernorViewModel`), and repository mapping on the JVM via `FakeAgentRepository`.
 
-#### Tier 4: Live On-Device Integration Tests (`scratch/test_device_cascade_permutations.ps1`)
-- Runs against live Android emulator (`emulator-5554`) or physical device:
-  - Automates UI tab switching and button presses via ADB.
-  - Triggers live model inference with fallback cascades to local on-device quantized models.
-  - Asserts real-time UI state, console logs (`✓ EXECUTION COMPLETE`), and trace rendering.
+#### Tier 4: Live On-Device Integration Tests (`android_mobi_nooa/src/androidTest/`)
+- Runs on a connected Android emulator or physical device via Gradle instrumentation:
+  - `.\gradlew.bat :android_mobi_nooa:connectedDebugAndroidTest`
+  - Validates physical telemetry, model storage integrity, and repository/bridge behavior in `Physical*InstrumentedTest` suites.
 
 #### Strict TDD (Red -> Green -> Refactor) Workflow:
 1. **RED (Write Failing Test First)**:
@@ -251,4 +250,3 @@ Repeatable, checklist-driven developer skills live in `.github/skills/`:
 - `.github/skills/test-mobi-nooa/SKILL.md` — how to design, write, and execute tests across the 4-tier testing pyramid and enforce strict TDD for agentic AI.
 - `.github/skills/flutter-ai-best-practices/SKILL.md` — official Flutter AI developer guidelines from `flutter/flutter` and `docs.flutter.dev/ai` (Dart 3 idioms, layered architecture, MCP live debugging, memory safety, a11y).
 - `.github/skills/technical-writer/SKILL.md` — how to author, structure, and verify user and developer documentation across the project.
-

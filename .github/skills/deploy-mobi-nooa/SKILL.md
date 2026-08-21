@@ -189,7 +189,7 @@ dart run example/run_benchmarks.dart
 Before releasing or deploying any new agent, harness, or strategy, execute the full test hierarchy:
 
 ```powershell
-# Tier 1: Pure Dart Core Unit & Permutation Tests (114+ tests)
+# Tier 1: Pure Dart Core Unit & Permutation Tests (120+ tests; currently 121)
 cd mobi_nooa_core
 dart analyze
 dart test --exclude-tags live
@@ -200,11 +200,11 @@ flutter analyze
 flutter test
 
 # Tier 3: Android Native Kotlin Architecture Tests
-cd ../android_mobi_nooa
-./gradlew :android_mobi_nooa:testDebugUnitTest
+cd ..
+.\gradlew.bat :android_mobi_nooa:testDebugUnitTest
 
-# Tier 4: Live On-Device Integration & UI Verification (emulator-5554 / physical device)
-powershell -ExecutionPolicy Bypass -File scratch/test_device_cascade_permutations.ps1
+# Tier 4: Live On-Device Integration & UI Verification (connected emulator / physical device)
+.\gradlew.bat :android_mobi_nooa:connectedDebugAndroidTest
 ```
 
 ---

@@ -301,8 +301,7 @@ Track these as ADRs in `docs/decisions/` once decided:
 ## Testing Architecture & Verification Strategy
 
 `mobi-nooa` follows an automated 4-tier verification pyramid:
-1. **Tier 1: Pure Dart Core Tests (`mobi_nooa_core/test/`)**: 114+ fast unit tests covering all 19 subsystems (Agents, Heap, CodeAct, Loop, 12 Fallback Cascade Permutations, Cloud Models, Tools, Harnesses, AST Guardrails, Plugins, Sessions, Memory, Storage, Strategies, Benchmarks, Governor, Tracing).
+1. **Tier 1: Pure Dart Core Tests (`mobi_nooa_core/test/`)**: 120+ fast unit tests (currently 121) covering all 19 subsystems (Agents, Heap, CodeAct, Loop, 12 Fallback Cascade Permutations, Cloud Models, Tools, Harnesses, AST Guardrails, Plugins, Sessions, Memory, Storage, Strategies, Benchmarks, Governor, Tracing).
 2. **Tier 2: Headless Flutter Bridge Tests (`mobi_nooa_bridge/test/`)**: Validates JSON MethodChannel dispatch and action routing across the platform boundary.
 3. **Tier 3: Android Native Kotlin Tests (`android_mobi_nooa/src/test/`)**: Validates Domain Use Cases, MVI ViewModels, and Data Repositories on the JVM.
-4. **Tier 4: Live On-Device Integration Tests (`scratch/test_device_cascade_permutations.ps1`)**: Verifies real end-to-end execution, telemetry streaming, and failover cascade on running Android hardware/emulators.
-
+4. **Tier 4: Live On-Device Integration Tests (`android_mobi_nooa/src/androidTest/`)**: Verifies real end-to-end execution on connected Android hardware/emulators via `.\gradlew.bat :android_mobi_nooa:connectedDebugAndroidTest` (physical telemetry, model storage integrity, and bridge/repository integration).

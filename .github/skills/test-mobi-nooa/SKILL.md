@@ -29,7 +29,7 @@ Use this skill when authoring new agents, coding tools, execution strategies, mo
 
 ## ⚡ Tier 1: Pure In-Memory Dart Core Unit Tests (`mobi_nooa_core/test/`)
 
-- **Characteristics**: 0 network calls, 0 device/emulator requirements, ultra-fast (<2s for 114+ tests).
+- **Characteristics**: 0 network calls, 0 device/emulator requirements, ultra-fast for 120+ tests (currently 121).
 - **Location**: `mobi_nooa_core/test/`
 
 ### Writing Mock Clients for Deterministic Testing
@@ -162,21 +162,21 @@ fun testAgentExecutionViewModel_TracksReasoningAndSteps() = runTest(testDispatch
 
 ---
 
-## 📱 Tier 4: Live On-Device Integration Tests (`scratch/test_device_cascade_permutations.ps1`)
+## 📱 Tier 4: Live On-Device Integration Tests (`android_mobi_nooa/src/androidTest/`)
 
-- **Characteristics**: Automated live ADB execution against a running Android emulator (`emulator-5554`) or physical device.
-- **Location**: `scratch/test_device_cascade_permutations.ps1`
+- **Characteristics**: Android instrumentation tests against a connected emulator or physical device.
+- **Location**: `android_mobi_nooa/src/androidTest/kotlin/com/mobi/nooa/`
 
 ```powershell
-# Run automated on-device test runner
-powershell -ExecutionPolicy Bypass -File scratch/test_device_cascade_permutations.ps1
+# Run on-device instrumentation suite
+.\gradlew.bat :android_mobi_nooa:connectedDebugAndroidTest
 ```
 
 **Assertions Verified**:
-1. Activity launches on device foreground without crashing.
-2. User tab navigation and button inputs dispatch across MethodChannel.
-3. Cloud provider failure correctly triggers fallback to local on-device quantized model.
-4. UI renders `tvStreamFallbackBanner`, `tvStreamConsole`, and `✓ EXECUTION COMPLETE`.
+1. Physical battery telemetry returns normalized battery level and charging state.
+2. Physical memory/thermal/network probes return valid values and expected domains.
+3. Device-side GGUF header parsing and SHA-256 hashing execute against real flash storage.
+4. Repository/bridge initialization and first-state flow emission execute on-device.
 
 ---
 
@@ -198,7 +198,7 @@ powershell -ExecutionPolicy Bypass -File scratch/test_device_cascade_permutation
 ## 🚀 Quick Execution Cheatsheet
 
 ```powershell
-# 1. Run all Dart core unit tests (114+ tests)
+# 1. Run all Dart core unit tests (120+ tests; currently 121)
 cd mobi_nooa_core
 dart analyze
 dart test --exclude-tags live
@@ -209,9 +209,9 @@ flutter analyze
 flutter test
 
 # 3. Run Android Kotlin JVM tests
-cd ../android_mobi_nooa
-./gradlew :android_mobi_nooa:testDebugUnitTest
+cd ..
+.\gradlew.bat :android_mobi_nooa:testDebugUnitTest
 
 # 4. Run full end-to-end device integration test
-powershell -ExecutionPolicy Bypass -File scratch/test_device_cascade_permutations.ps1
+.\gradlew.bat :android_mobi_nooa:connectedDebugAndroidTest
 ```
