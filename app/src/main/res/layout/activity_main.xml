@@ -1,166 +1,899 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/mainScrollView"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121314"
-    android:padding="16dp">
+    android:orientation="vertical"
+    android:background="#0B0C0E"
+    android:fitsSystemWindows="true">
 
+    <!-- Top Header Bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical"
+        android:background="#12141A">
 
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="mobi-nooa"
+                android:textColor="#00E5FF"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.04" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Object-Oriented Mobile Agent Engine"
+                android:textColor="#8E9AA8"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Engine Status Badge -->
         <TextView
+            android:id="@+id/tvEngineStatusBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="mobi-nooa"
-            android:textColor="#00E5FF"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Autonomous Object-Oriented Mobile Agent Engine"
-            android:textColor="#8E8E93"
-            android:textSize="12sp"
-            android:layout_marginBottom="16dp" />
-
-        <!-- API Key Input -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="API Key (.env / Provider)"
-            android:textColor="#FFFFFF"
+            android:text="● READY"
+            android:textColor="#00E676"
+            android:textSize="11sp"
             android:textStyle="bold"
-            android:textSize="14sp" />
-
-        <EditText
-            android:id="@+id/apiKeyInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Enter API Key (nvapi-... / sk-...)"
-            android:textColorHint="#666666"
-            android:textColor="#FFFFFF"
-            android:background="#1E1F20"
-            android:padding="12dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="12dp"
-            android:fontFamily="monospace"
-            android:inputType="text" />
-
-        <!-- Provider Selection -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Model Provider"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:textSize="14sp" />
-
-        <Spinner
-            android:id="@+id/providerSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="#1E1F20"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Model Name -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Model Name"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:textSize="14sp" />
-
-        <EditText
-            android:id="@+id/modelInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="meta/llama-3.3-70b-instruct"
-            android:textColor="#FFFFFF"
-            android:background="#1E1F20"
-            android:padding="12dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="12dp"
-            android:fontFamily="monospace"
-            android:inputType="text" />
-
-        <!-- Agent Selection -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Agent Class"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:textSize="14sp" />
-
-        <Spinner
-            android:id="@+id/agentSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="#1E1F20"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Task / Goal Input -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Goal / Instruction"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:textSize="14sp" />
-
-        <EditText
-            android:id="@+id/taskInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minLines="2"
-            android:text="Triage device battery, RAM headroom, and thermal health."
-            android:textColor="#FFFFFF"
-            android:background="#1E1F20"
-            android:padding="12dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="16dp"
-            android:inputType="textMultiLine" />
-
-        <!-- Execute Button -->
-        <Button
-            android:id="@+id/btnRunAgent"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:text="Execute Agent Task"
-            android:textColor="#000000"
-            android:textStyle="bold"
-            android:backgroundTint="#00E5FF"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Output & Status View -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Execution Console"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:textSize="14sp" />
-
-        <TextView
-            android:id="@+id/outputView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="150dp"
-            android:background="#1B1C1C"
-            android:textColor="#00E5FF"
-            android:padding="12dp"
-            android:layout_marginTop="4dp"
-            android:fontFamily="monospace"
-            android:textSize="12sp"
-            android:text="Ready for execution.\nType API key and click 'Execute Agent Task'."
-            android:textIsSelectable="true" />
-
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:background="#162E24" />
     </LinearLayout>
-</ScrollView>
+
+    <!-- Navigation Tabs -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:background="#12141A"
+        app:tabIndicatorColor="#00E5FF"
+        app:tabSelectedTextColor="#00E5FF"
+        app:tabTextColor="#8E9AA8"
+        app:tabMode="scrollable"
+        app:tabTextAppearance="@android:style/TextAppearance.Small" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#1F232B" />
+
+    <!-- Tab Content Container -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- TAB 1: AGENT HUB & DASHBOARD -->
+        <ScrollView
+            android:id="@+id/layoutHub"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Hardware Quick Telemetry Strip -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DEVICE HEALTH &amp; TELEMETRY"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:id="@+id/tvHubBattery"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="🔋 100% Nominal"
+                        android:textColor="#F0F3F6"
+                        android:textSize="11sp"
+                        android:background="#16181D"
+                        android:padding="8dp"
+                        android:layout_marginEnd="4dp" />
+
+                    <TextView
+                        android:id="@+id/tvHubRam"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="🧠 RAM: Introspecting"
+                        android:textColor="#F0F3F6"
+                        android:textSize="11sp"
+                        android:background="#16181D"
+                        android:padding="8dp"
+                        android:layout_marginHorizontal="2dp" />
+
+                    <TextView
+                        android:id="@+id/tvHubThermal"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="❄️ Nominal"
+                        android:textColor="#00E676"
+                        android:textSize="11sp"
+                        android:background="#16181D"
+                        android:padding="8dp"
+                        android:layout_marginStart="4dp" />
+                </LinearLayout>
+
+                <!-- Operating Mode Selector -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AGENT OPERATING MODE (ADR 0011)"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <RadioGroup
+                    android:id="@+id/rgOperatingMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp">
+
+                    <RadioButton
+                        android:id="@+id/rbModeAutonomous"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Autonomous"
+                        android:textColor="#F0F3F6"
+                        android:textSize="11sp"
+                        android:checked="true" />
+
+                    <RadioButton
+                        android:id="@+id/rbModeSupervised"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Supervised"
+                        android:textColor="#F0F3F6"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbModeAudit"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Audit Log"
+                        android:textColor="#F0F3F6"
+                        android:textSize="11sp" />
+                </RadioGroup>
+
+                <!-- Reference Agent Selector -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="NOOA REFERENCE AGENT CLASS"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <Spinner
+                    android:id="@+id/spHubAgent"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="#16181D"
+                    android:paddingHorizontal="12dp"
+                    android:layout_marginTop="6dp" />
+
+                <TextView
+                    android:id="@+id/tvAgentDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Hardware triage, battery monitoring, notifications, and two-way procedural skill learning."
+                    android:textColor="#8E9AA8"
+                    android:textSize="12sp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Model Provider & Credentials -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MODEL CLIENT CONFIGURATION"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp">
+
+                    <Spinner
+                        android:id="@+id/spHubProvider"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:background="#16181D"
+                        android:paddingHorizontal="12dp"
+                        android:layout_marginEnd="6dp" />
+
+                    <EditText
+                        android:id="@+id/etHubModelName"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1.4"
+                        android:hint="Model Name"
+                        android:text="meta/llama-3.3-70b-instruct"
+                        android:textColor="#F0F3F6"
+                        android:textColorHint="#5A6675"
+                        android:textSize="13sp"
+                        android:background="#16181D"
+                        android:paddingHorizontal="12dp"
+                        android:layout_marginStart="6dp" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/etHubApiKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="API Key (nvapi-... / sk-...)"
+                    android:textColor="#F0F3F6"
+                    android:textColorHint="#5A6675"
+                    android:textSize="13sp"
+                    android:background="#16181D"
+                    android:paddingHorizontal="12dp"
+                    android:layout_marginTop="8dp"
+                    android:inputType="textPassword" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnQuickStartTask"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="Configure &amp; Go to Execution Stream ➔"
+                    android:textColor="#0B0C0E"
+                    android:textStyle="bold"
+                    android:backgroundTint="#00E5FF"
+                    android:layout_marginTop="20dp"
+                    app:cornerRadius="8dp" />
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- TAB 2: AGENT EXECUTION & DEEPSEEK STREAM -->
+        <ScrollView
+            android:id="@+id/layoutStream"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Task Goal Input -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AGENT TASK GOAL"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <EditText
+                    android:id="@+id/etStreamGoal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="2"
+                    android:text="Triage device battery, RAM headroom, and thermal health."
+                    android:textColor="#F0F3F6"
+                    android:textSize="13sp"
+                    android:background="#16181D"
+                    android:padding="12dp"
+                    android:layout_marginTop="6dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center_vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStreamExecute"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:text="▶ EXECUTE AGENT LOOP"
+                        android:textColor="#0B0C0E"
+                        android:textStyle="bold"
+                        android:backgroundTint="#00E5FF"
+                        app:cornerRadius="8dp" />
+
+                    <!-- Security Pill -->
+                    <TextView
+                        android:id="@+id/tvAstSecurityPill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🛡️ AST Guard: PASS"
+                        android:textColor="#00E676"
+                        android:textSize="11sp"
+                        android:background="#162E24"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="8dp"
+                        android:layout_marginStart="8dp" />
+                </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/pbStreamProgress"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="4dp"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    android:layout_marginTop="12dp" />
+
+                <!-- DeepSeek-R1 Expandable Thinking Accordion -->
+                <LinearLayout
+                    android:id="@+id/cardDeepSeekThinking"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#101C24"
+                    android:padding="12dp"
+                    android:layout_marginTop="14dp">
+
+                    <LinearLayout
+                        android:id="@+id/headerDeepSeekThinking"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🧠 DeepSeek-R1 Reasoning &lt;think&gt;"
+                            android:textColor="#00E5FF"
+                            android:textStyle="bold"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvThinkingToggle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="[ Collapse ]"
+                            android:textColor="#8E9AA8"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvDeepSeekThoughts"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Agent reasoning tokens will stream live here during execution..."
+                        android:textColor="#8BE9FD"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
+
+                <!-- Pass-by-Reference ObjectHeap Chips -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="OBJECT HEAP PASS-BY-REFERENCE HANDLES"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginTop="14dp" />
+
+                <TextView
+                    android:id="@+id/tvHeapHandlesChips"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No heap objects allocated yet. (#ref_xxx)"
+                    android:textColor="#FFB300"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace"
+                    android:background="#1D1A14"
+                    android:padding="8dp"
+                    android:layout_marginTop="4dp" />
+
+                <!-- Execution Output Console -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="EXECUTION STREAM &amp; CONSOLE"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginTop="14dp" />
+
+                <TextView
+                    android:id="@+id/tvStreamConsole"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="6"
+                    android:text="Ready for execution.\nConfigure settings in Hub and click Execute."
+                    android:textColor="#F0F3F6"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace"
+                    android:background="#16181D"
+                    android:padding="12dp"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- TAB 3: PLUGIN MARKETPLACE & SERVICE SEAMS -->
+        <ScrollView
+            android:id="@+id/layoutPlugins"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ACTIVE AGENT PLUGINS (ADR 0011)"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <!-- TelemetryLogger Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#16181D"
+                    android:padding="12dp"
+                    android:layout_marginTop="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="TelemetryLoggerPlugin"
+                            android:textColor="#F0F3F6"
+                            android:textStyle="bold"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ACTIVE"
+                            android:textColor="#00E676"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:background="#162E24"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Streams real-time step execution latency, token counts, and memory allocations."
+                        android:textColor="#8E9AA8"
+                        android:textSize="11sp"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- DynamicToolPlugin Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#16181D"
+                    android:padding="12dp"
+                    android:layout_marginTop="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="DynamicToolPlugin"
+                            android:textColor="#F0F3F6"
+                            android:textStyle="bold"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ACTIVE"
+                            android:textColor="#00E676"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:background="#162E24"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Dynamic runtime tool injection enabling on-the-fly custom actions."
+                        android:textColor="#8E9AA8"
+                        android:textSize="11sp"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- AuditSecurityPlugin Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#16181D"
+                    android:padding="12dp"
+                    android:layout_marginTop="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="AuditSecurityPlugin"
+                            android:textColor="#F0F3F6"
+                            android:textStyle="bold"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ENFORCING"
+                            android:textColor="#00E5FF"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:background="#101C24"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="AST snippet verification and mobile permission interceptor."
+                        android:textColor="#8E9AA8"
+                        android:textSize="11sp"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- Dynamic Tool Test Invoker -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DYNAMIC TOOL CREATION SEAM"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginTop="16dp" />
+
+                <EditText
+                    android:id="@+id/etDynamicToolName"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:text="calculateTax"
+                    android:textColor="#F0F3F6"
+                    android:textSize="13sp"
+                    android:background="#16181D"
+                    android:paddingHorizontal="12dp"
+                    android:layout_marginTop="6dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRegisterDynamicTool"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Register &amp; Inject Dynamic Tool"
+                    android:textColor="#0B0C0E"
+                    android:textStyle="bold"
+                    android:backgroundTint="#00E676"
+                    android:layout_marginTop="8dp"
+                    app:cornerRadius="8dp" />
+
+                <TextView
+                    android:id="@+id/tvDynamicToolStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Plugin registry status: 3 active plugins loaded."
+                    android:textColor="#8E9AA8"
+                    android:textSize="12sp"
+                    android:layout_marginTop="6dp" />
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- TAB 4: SESSION TIME-TRAVEL & FORKING -->
+        <ScrollView
+            android:id="@+id/layoutSession"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SESSION ID &amp; APPEND-ONLY EVENT LOG"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <EditText
+                    android:id="@+id/etSessionId"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:text="session_live_01"
+                    android:textColor="#F0F3F6"
+                    android:textSize="13sp"
+                    android:background="#16181D"
+                    android:paddingHorizontal="12dp"
+                    android:layout_marginTop="6dp" />
+
+                <!-- Time-Travel Step Scrubber -->
+                <TextView
+                    android:id="@+id/tvSessionStepIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="TIME-TRAVEL STEP: 1 / 5"
+                    android:textColor="#00E5FF"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="14dp" />
+
+                <SeekBar
+                    android:id="@+id/sbSessionScrubber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="5"
+                    android:progress="1"
+                    android:layout_marginTop="6dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSessionReplay"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:text="⏪ Replay Step"
+                        android:textColor="#0B0C0E"
+                        android:textStyle="bold"
+                        android:backgroundTint="#00E5FF"
+                        android:layout_marginEnd="4dp"
+                        app:cornerRadius="6dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSessionFork"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1.2"
+                        android:text="⚡ Fork Branch"
+                        android:textColor="#0B0C0E"
+                        android:textStyle="bold"
+                        android:backgroundTint="#FFB300"
+                        android:layout_marginStart="4dp"
+                        app:cornerRadius="6dp" />
+                </LinearLayout>
+
+                <!-- Reconstructed State Snapshot -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="RECONSTRUCTED STATE SNAPSHOT (TIME-TRAVEL)"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginTop="16dp" />
+
+                <TextView
+                    android:id="@+id/tvSessionStateSnapshot"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="5"
+                    android:text="{\n  &quot;step&quot;: 1,\n  &quot;pressure&quot;: &quot;nominal&quot;,\n  &quot;handles&quot;: [&quot;#ref_1&quot;],\n  &quot;mode&quot;: &quot;autonomous&quot;\n}"
+                    android:textColor="#00E676"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace"
+                    android:background="#16181D"
+                    android:padding="12dp"
+                    android:layout_marginTop="6dp" />
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- TAB 5: RESOURCE GOVERNOR & LOAD BALANCER -->
+        <ScrollView
+            android:id="@+id/layoutGovernor"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="HARDWARE RESOURCE METRICS (ADR 0010)"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <!-- Gauges -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#16181D"
+                    android:padding="12dp"
+                    android:layout_marginTop="6dp">
+
+                    <TextView
+                        android:id="@+id/tvGovRamPressure"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="🧠 RAM Pressure: NOMINAL (2.4 GB / 8.0 GB)"
+                        android:textColor="#F0F3F6"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvGovThermalState"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="🌡️ Thermal State: NOMINAL (28.5°C)"
+                        android:textColor="#00E676"
+                        android:textSize="12sp"
+                        android:layout_marginTop="6dp" />
+
+                    <TextView
+                        android:id="@+id/tvGovBattery"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="🔋 Battery: 100% · Status: DISCHARGING"
+                        android:textColor="#F0F3F6"
+                        android:textSize="12sp"
+                        android:layout_marginTop="6dp" />
+
+                    <TextView
+                        android:id="@+id/tvGovNetwork"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="📶 Network: WIFI (Connected)"
+                        android:textColor="#F0F3F6"
+                        android:textSize="12sp"
+                        android:layout_marginTop="6dp" />
+                </LinearLayout>
+
+                <!-- Adaptive Budget Recommendation -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ADAPTIVE CONCURRENCY &amp; OFFLOAD BUDGET"
+                    android:textColor="#8E9AA8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginTop="16dp" />
+
+                <TextView
+                    android:id="@+id/tvGovBudgetSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Budget: Nominal | Concurrency Cap: 3 | Model Tier: onDeviceStandard | Cloud Offload: Inactive"
+                    android:textColor="#00E5FF"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace"
+                    android:background="#101C24"
+                    android:padding="12dp"
+                    android:layout_marginTop="6dp" />
+
+                <!-- Action Controls -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGovCompactHeap"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:text="🧹 Compact Heap"
+                        android:textColor="#0B0C0E"
+                        android:textStyle="bold"
+                        android:backgroundTint="#00E5FF"
+                        android:layout_marginEnd="4dp"
+                        app:cornerRadius="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGovRefresh"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:text="🔄 Refresh Metrics"
+                        android:textColor="#0B0C0E"
+                        android:textStyle="bold"
+                        android:backgroundTint="#00E676"
+                        android:layout_marginStart="4dp"
+                        app:cornerRadius="8dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
+</LinearLayout>
+
