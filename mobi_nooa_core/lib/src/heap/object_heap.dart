@@ -7,6 +7,8 @@ import 'bounded_preview.dart';
 /// Complex objects (dataframes, images, result sets, file buffers) are stored here.
 /// The model interacts with them using handles (e.g. `#ref_1`).
 class ObjectHeap {
+  static final ObjectHeap instance = ObjectHeap();
+
   final Map<String, dynamic> _objects = {};
   final Map<String, ObjectReference> _references = {};
   final BoundedPreviewGenerator _previewGenerator;
@@ -20,6 +22,13 @@ class ObjectHeap {
     BoundedPreviewGenerator? previewGenerator,
     this.autoReferenceThresholdBytes = 300,
   }) : _previewGenerator = previewGenerator ?? const BoundedPreviewGenerator();
+
+  /// Compacts the heap by clearing all stored objects and returning the count of objects freed.
+  int compact() {
+    final count = _objects.length;
+    clear();
+    return count;
+  }
 
   /// Registers an object into the heap and returns its [ObjectReference].
   ObjectReference put(

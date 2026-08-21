@@ -17,6 +17,10 @@ import '../models/nvidia_client.dart';
 import '../models/deepseek_client.dart';
 import '../models/fallback_cascade_client.dart';
 import '../util/quickstart.dart';
+import '../governor/resource_governor.dart';
+import '../heap/object_heap.dart';
+import '../plugin/agent_plugin.dart';
+import '../plugin/built_in_plugins.dart';
 
 import '../harness/harness_api.dart';
 import '../harness/device_harness.dart';
@@ -209,7 +213,7 @@ class AgentBridgeDispatcher {
           if (sessionId == null || !_sessions.containsKey(sessionId)) {
             return {'error': 'Session not found: $sessionId'};
           }
-          final toStep = (request['toStepIndex'] as num?)?.toInt() ?? 999;
+          final toStep = ((request['toStepIndex'] ?? request['stepIndex']) as num?)?.toInt() ?? 999;
           final replay = _sessions[sessionId]!.replay(toStep);
           return {
             'sessionId': sessionId,
@@ -218,7 +222,7 @@ class AgentBridgeDispatcher {
             'eventCount': replay.eventHistory.length,
           };
         case 'forkSession':
-          final sourceId = request['sourceSessionId'] as String?;
+          final sourceId = (request['sourceSessionId'] ?? request['sessionId']) as String?;
           final newSessionId = request['newSessionId'] as String? ??
               'fork_${DateTime.now().millisecondsSinceEpoch}';
           if (sourceId == null || !_sessions.containsKey(sourceId)) {
@@ -231,7 +235,9 @@ class AgentBridgeDispatcher {
           );
           _sessions[newSessionId] = forked;
           return {
+            'sessionId': newSessionId,
             'newSessionId': newSessionId,
+            'forkedFrom': sourceId,
             'eventCount': forked.events.length,
           };
         case 'listPlugins':
@@ -269,7 +275,31 @@ class AgentBridgeDispatcher {
         case 'getDeviceStatus':
           final targetDevice = deviceHarness ?? DefaultDeviceHarness();
           final status = await targetDevice.getStatus();
-          return {'status': status.toJson()};
+          return {'status': status.toJson(), 'telemetry': status.toJson()};
+        case 'getDeviceTelemetry':
+          final targetDevice = deviceHarness ?? DefaultDeviceHarness();
+          final status = await targetDevice.getStatus();
+          return {'telemetry': status.toJson(), 'status': status.toJson()};
+        case 'assessBudget':
+          final targetDevice = deviceHarness ?? DefaultDeviceHarness();
+          final status = await targetDevice.getStatus();
+          final budget = await DeviceResourceGovernor.assessBudget(status);
+          return {'budget': budget.toJson()};
+        case 'compactHeap':
+          final compactResult = ObjectHeap.instance.compact();
+          return {'success': true, 'compacted': compactResult};
+        case 'registerDynamicTool':
+          final toolName = request['name'] as String? ?? 'customTool';
+          final toolDesc = request['description'] as String? ?? '';
+          pluginRegistry.register(
+            DynamicToolPlugin()
+              ..registerAction(
+                name: toolName,
+                description: toolDesc,
+                invoker: (args) async => {'result': 'executed $toolName', 'inputs': args},
+              ),
+          );
+          return {'success': true, 'toolName': toolName};
         case 'sendNotification':
           final targetDevice = deviceHarness ?? DefaultDeviceHarness();
           final title = request['title'] as String? ?? '';

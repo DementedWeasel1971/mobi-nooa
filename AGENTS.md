@@ -159,15 +159,51 @@ Use `DeviceResourceGovernor` to protect device stability:
 - Detects RAM pressure, thermal throttling, and battery status.
 - Automatically reduces agent concurrency and switches heavy on-device NPU tasks to cloud offload or eco-delays.
 
-### 8. Test-Driven Development (TDD) for Agentic AI
-AI developers creating new agents, harnesses, plugins, or workflows must adopt a strict **TDD (Red -> Green -> Refactor)** workflow:
+### 8. Comprehensive Testing Methodology & TDD for Agentic AI
+`mobi-nooa` enforces a **4-Tier Testing Pyramid** aligned with NOOA design invariants and mobile constraints:
+
+```
+           / \
+          / 4 \     Tier 4: Live On-Device Instrumentation & UI Tests (ADB / Hardware)
+         /-----\
+        /   3   \   Tier 3: Android Native Kotlin JVM Unit Tests (Domain / UDF ViewModels)
+       /---------\
+      /     2     \ Tier 2: Headless Flutter Bridge MethodChannel Tests (Platform Boundary)
+     /-------------\
+    /       1       \ Tier 1: Pure In-Memory Dart Core Unit Tests (19 Subsystems, Mock Clients)
+   /-----------------\
+```
+
+#### Tier 1: Pure In-Memory Core Tests (`mobi_nooa_core/test/`)
+- **Fast & Deterministic**: Zero network calls, zero device dependencies. Executes 110+ tests in under 2 seconds.
+- **Coverage**:
+  - **12 Fallback Cascade Permutations** (`test/models/fallback_cascade_client_test.dart`): Nominal primary success, in-tier retries, 503 HTTP failovers, timeouts, 4-tier N-way chains, all-exhausted exceptions, mid-trajectory tool execution failovers, schema preservation, DeepSeek-R1 reasoning content extraction, bridge JSON configuration, single-provider pass-through, and `reset()`.
+  - **Reference Agents & Heap** (`test/reference_agents_test.dart`, `test/nooa_principles_test.dart`): All 5 reference agents, `#ref_xxx` handle allocations, LRU cache compaction, and state isolation.
+  - **AST Security Guardrails** (`test/security_injection_test.dart`, `test/permission_manager_test.dart`): CodeAct sandboxing, shell command injection defenses, path traversal protection, and interactive permission callbacks.
+  - **Coding Tools & Harnesses** (`test/tools_and_harnesses_test.dart`): `FileEditorTool`, `CodeSearchTool`, `InMemorySqliteHarness`, `MemoryFileSystemHarness`, and `DefaultDeviceHarness`.
+  - **Time-Travel & Branch Forking** (`test/session_event_log_test.dart`): Event replay and immutable branch forking.
+  - **Resource Governor** (`test/resource_governor_test.dart`): Thermal pressure, RAM budgets, and load balancing.
+
+#### Tier 2: Headless Flutter Bridge Tests (`mobi_nooa_bridge/test/`)
+- Verifies MethodChannel request decoding, dispatcher action routing (`runAgentLoop`, `replaySession`, `forkSession`, `getDeviceTelemetry`, `assessBudget`, `compactHeap`), and JSON response formatting.
+
+#### Tier 3: Android Native Kotlin Tests (`android_mobi_nooa/src/test/`)
+- Tests Clean Architecture use cases, UDF MVI ViewModels (`AgentHubViewModel`, `AgentExecutionViewModel`, `SessionTimelineViewModel`, `ResourceGovernorViewModel`), and repository mapping on the JVM via `FakeAgentRepository`.
+
+#### Tier 4: Live On-Device Integration Tests (`scratch/test_device_cascade_permutations.ps1`)
+- Runs against live Android emulator (`emulator-5554`) or physical device:
+  - Automates UI tab switching and button presses via ADB.
+  - Triggers live model inference with fallback cascades to local on-device quantized models.
+  - Asserts real-time UI state, console logs (`✓ EXECUTION COMPLETE`), and trace rendering.
+
+#### Strict TDD (Red -> Green -> Refactor) Workflow:
 1. **RED (Write Failing Test First)**:
-   - Use `MockModelClient` to simulate multi-step tool calls, thoughts, and answers deterministically.
+   - Use `MockConfigurableModelClient` or `MockFailingModelClient` to simulate multi-step tool calls, thoughts, and failure modes deterministically.
    - Assert expected tool arguments, state mutations (`getState`), and return payloads before writing implementation code.
 2. **GREEN (Implement Minimum Behavior)**:
    - Write the agent actions, harness methods, or plugin logic until `dart test` or `./gradlew test` passes.
 3. **REFACTOR & SECURE**:
-   - Verify security guardrails (`AstGuardrails.validate`, `PermissionManager.authorize`), wrap large blobs into `ObjectHeap.maybeWrap`, and ensure static analysis (`dart analyze`) is 100% clean.
+   - Verify security guardrails (`AstGuardrails.validate`, `PermissionManager.authorize`), wrap large blobs into `ObjectHeap.maybeWrap`, and ensure static analysis (`dart analyze` / `flutter analyze`) is 100% clean.
 
 ---
 

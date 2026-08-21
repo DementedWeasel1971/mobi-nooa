@@ -75,7 +75,9 @@ class ExecutionBudget {
   Map<String, dynamic> toJson() => {
         'pressureLevel': pressureLevel.name,
         'recommendedModelTier': recommendedModelTier.name,
+        'recommendedTier': recommendedModelTier.name,
         'maxConcurrentAgents': maxConcurrentAgents,
+        'maxConcurrency': maxConcurrentAgents,
         'stepPacingDelayMs': stepPacingDelayMs,
         'isEcoPowerRequired': isEcoPowerRequired,
         'shouldTriggerHeapCompaction': shouldTriggerHeapCompaction,
@@ -99,6 +101,12 @@ class DeviceResourceGovernor {
   ExecutionBudget? _cachedBudget;
 
   DeviceResourceGovernor({required this.harness});
+
+  /// Evaluates static budget from a [DeviceStatus] snapshot.
+  static Future<ExecutionBudget> assessBudget(DeviceStatus status) async {
+    final governor = DeviceResourceGovernor(harness: DefaultDeviceHarness(initialStatus: status));
+    return governor.evaluateBudget();
+  }
 
   /// Evaluates current device telemetry and computes an optimal [ExecutionBudget].
   Future<ExecutionBudget> evaluateBudget() async {

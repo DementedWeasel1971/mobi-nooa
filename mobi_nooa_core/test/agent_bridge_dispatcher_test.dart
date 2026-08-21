@@ -155,6 +155,70 @@ void main() {
       expect(getRes['checkpoint']['stepIndex'], equals(3));
       expect(getRes['checkpoint']['stateSnapshot']['batteryStatus'], equals('80%'));
     });
+
+    test('replaySession and forkSession work through bridge dispatcher', () async {
+      final dispatcher = AgentBridgeDispatcher.withDefaults();
+
+      // First run an agent loop with a sessionId to generate session events
+      await dispatcher.handle({
+        'action': 'runAgentLoop',
+        'sessionId': 'session_bridge_test',
+        'agentName': 'GeneralMobileAgent',
+        'goal': 'Test session creation',
+      });
+
+      final replayRes = await dispatcher.handle({
+        'action': 'replaySession',
+        'sessionId': 'session_bridge_test',
+        'stepIndex': 1,
+      });
+      expect(replayRes['error'], isNull);
+      expect(replayRes['sessionId'], equals('session_bridge_test'));
+      expect(replayRes['stepIndex'], equals(1));
+
+      final forkRes = await dispatcher.handle({
+        'action': 'forkSession',
+        'sessionId': 'session_bridge_test',
+        'newSessionId': 'session_bridge_fork',
+        'fromStepIndex': 1,
+      });
+      expect(forkRes['error'], isNull);
+      expect(forkRes['sessionId'], equals('session_bridge_fork'));
+      expect(forkRes['forkedFrom'], equals('session_bridge_test'));
+    });
+
+    test('listPlugins and registerDynamicTool work through bridge dispatcher', () async {
+      final dispatcher = AgentBridgeDispatcher.withDefaults();
+
+      final listRes = await dispatcher.handle({'action': 'listPlugins'});
+      expect(listRes['plugins'], isA<List>());
+
+      final regRes = await dispatcher.handle({
+        'action': 'registerDynamicTool',
+        'name': 'multiplyByTen',
+        'description': 'Multiplies input by 10',
+        'code': 'return (args["val"] as num) * 10;',
+      });
+      expect(regRes['success'], isTrue);
+      expect(regRes['toolName'], equals('multiplyByTen'));
+    });
+
+    test('getDeviceTelemetry, compactHeap, and assessBudget work through dispatcher', () async {
+      final dispatcher = AgentBridgeDispatcher.withDefaults();
+
+      final telemetryRes = await dispatcher.handle({'action': 'getDeviceTelemetry'});
+      expect(telemetryRes['telemetry'], isNotNull);
+      expect(telemetryRes['telemetry']['batteryLevel'], isNotNull);
+      expect(telemetryRes['telemetry']['thermalStatus'], isNotNull);
+
+      final budgetRes = await dispatcher.handle({'action': 'assessBudget'});
+      expect(budgetRes['budget'], isNotNull);
+      expect(budgetRes['budget']['maxConcurrency'], isNotNull);
+      expect(budgetRes['budget']['recommendedTier'], isNotNull);
+
+      final compactRes = await dispatcher.handle({'action': 'compactHeap'});
+      expect(compactRes['success'], isTrue);
+    });
   });
 }
 

@@ -184,6 +184,31 @@ dart run example/run_benchmarks.dart
 
 ---
 
+## 🧪 6. Automated 4-Tier Testing & Verification Checklist
+
+Before releasing or deploying any new agent, harness, or strategy, execute the full test hierarchy:
+
+```powershell
+# Tier 1: Pure Dart Core Unit & Permutation Tests (114+ tests)
+cd mobi_nooa_core
+dart analyze
+dart test --exclude-tags live
+
+# Tier 2: Headless Flutter Bridge MethodChannel Tests
+cd ../mobi_nooa_bridge
+flutter analyze
+flutter test
+
+# Tier 3: Android Native Kotlin Architecture Tests
+cd ../android_mobi_nooa
+./gradlew :android_mobi_nooa:testDebugUnitTest
+
+# Tier 4: Live On-Device Integration & UI Verification (emulator-5554 / physical device)
+powershell -ExecutionPolicy Bypass -File scratch/test_device_cascade_permutations.ps1
+```
+
+---
+
 ## 🛡️ Production Safety & Security Invariants
 
 When deploying into production:

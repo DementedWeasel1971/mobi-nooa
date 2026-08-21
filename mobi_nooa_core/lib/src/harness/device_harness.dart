@@ -50,6 +50,7 @@ class DeviceStatus {
         'totalRamMb': totalRamMb,
         'isLowRamDevice': isLowRamDevice,
         'thermalState': thermalState.name,
+        'thermalStatus': thermalState.name,
         'cpuLoadFraction': cpuLoadFraction,
       };
 }
