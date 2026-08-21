@@ -6,11 +6,10 @@ mobi-nooa adapts NVIDIA's NOOA framework (*labs-OO-Agents*, arXiv:2607.20709)
 — originally a Python object-oriented agent framework — into Dart (core
 logic) and Kotlin (Android integration), so agentic AI loops can run
 on-device on mobile hardware, with or without a persistent server connection.
-On top of the six core NOOA principles, this repo also implements a
-`BenchAgent` (an autonomous software-engineering agent following the
-NOOA paper's reference `BenchAgent` design), a cognitive long-term memory
-subsystem, pluggable execution strategies, SQLite-backed persistence, and
-an AST-level security layer for CodeAct — see below for where each lives.
+It fuses three breakthrough agentic runtime architectures:
+1. **NVIDIA's Object-Oriented Agents (NOOA)**: Class-as-agent, pass-by-reference `#ref_xxx` object heap, CodeAct execution, and explicit state isolation.
+2. **DeepSeek Harness (dsh)**: Plugin-first architecture, service seams, tiered permissions, and append-only session event logs with time-travel & branch forking.
+3. **xAI Grok Build (`xai-org/grok-build`)**: Agent Client Protocol (ACP) JSON-RPC 2.0 standard, 8-way parallel subagent orchestrator with isolated workspaces, Plan-First Mode ("Plan -> Review -> Approve -> Execute with Diffs"), declarative `hooks.json` lifecycle interceptors, `/skillify` trajectory synthesis, and first-class `GrokClient` support.
 
 ## The six NOOA principles, and where they live in this repo
 

@@ -205,6 +205,26 @@ Use `DeviceResourceGovernor` to protect device stability:
 3. **REFACTOR & SECURE**:
    - Verify security guardrails (`AstGuardrails.validate`, `PermissionManager.authorize`), wrap large blobs into `ObjectHeap.maybeWrap`, and ensure static analysis (`dart analyze` / `flutter analyze`) is 100% clean.
 
+### 9. Winning AI Harness Concepts from xAI Grok Build (`xai-org/grok-build`)
+
+`mobi-nooa` incorporates the top engineering concepts from xAI's **Grok Build** harness:
+
+1. **Agent Client Protocol (ACP) JSON-RPC 2.0 Standard (`AcpDispatcher`)**:
+   - Implements the standardized ACP wire protocol (`initialize`, `agents/list`, `models/list`, `session/create`, `session/prompt`, `session/step`, `session/replay`, `session/fork`, `governor/telemetry`).
+   - Allows external IDEs (Zed, VS Code, Cursor), CI/CD pipelines, and automated bots to drive `mobi-nooa` headlessly without bespoke glue code.
+2. **8-Way Parallel Subagent Orchestrator (`SubagentOrchestrator`)**:
+   - Concurrently spawns up to 8 parallel subagents with isolated workspaces (`SubagentWorkspaceMode.isolated` simulating Git worktrees).
+   - Pools background tasks and aggregates child states/handles back into the parent trajectory.
+3. **Plan-First Mode ("Plan -> Review -> Approve -> Execute with Diffs") (`PlanModeManager`)**:
+   - Decomposes complex objectives into structured `PlanStep` sequences with pre-flight diff previews and human-in-the-loop approval gates before mutating file/system state.
+4. **Declarative Lifecycle Hooks (`AgentLifecycleHooksPlugin` & `hooks.json`)**:
+   - Intercepts `preStep`, `postStep`, `preToolCall`, `postToolCall`, `onError`, and `onModelFallback`.
+   - Supports declarative registration via `hooks.json` or programmatic Dart handlers.
+5. **`/skillify` (Trajectory to Skill Synthesizer) (`SkillifySynthesizer`)**:
+   - Automatically distills successful multi-step session trajectories from `SessionEventLog` into reusable, permanent procedural `Skill` recipes with checklists.
+6. **xAI Grok Model Provider (`GrokClient`)**:
+   - Direct integration with xAI's API endpoint (`api.x.ai/v1`) for Grok 2, Grok 3, Grok Beta, and Grok 4.6 with `<think>` reasoning token extraction.
+
 ---
 
 ## Guardrails & Invariants
