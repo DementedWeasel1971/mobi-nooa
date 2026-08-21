@@ -228,5 +228,6 @@ Repeatable, checklist-driven developer skills live in `.github/skills/`:
 - `.github/skills/add-nooa-strategy/SKILL.md` — how to add a new execution reasoning strategy (NOOA Principle 4).
 - `.github/skills/deploy-mobi-nooa/SKILL.md` — how to deploy `mobi-nooa` on Android, headless Flutter, on-device GGUF, or CLI.
 - `.github/skills/design-mobi-nooa-ui/SKILL.md` — how to design, generate, and maintain mobile UI/UX screens using Stitch MCP following the Neo-Neural Agentic Interface.
+- `.github/skills/test-mobi-nooa/SKILL.md` — how to design, write, and execute tests across the 4-tier testing pyramid and enforce strict TDD for agentic AI.
 - `.github/skills/technical-writer/SKILL.md` — how to author, structure, and verify user and developer documentation across the project.
 
