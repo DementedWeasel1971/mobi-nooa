@@ -76,4 +76,44 @@ class AgentDomainArchitectureTest {
         assertEquals("gemini", cloudConfig.provider)
         assertEquals("secret_key", cloudConfig.apiKey)
     }
+
+    @Test
+    fun testModelConfigCascadeAndFallbackEvents() {
+        val primary = ModelConfig.DeepSeek(apiKey = "invalid_key")
+        val secondary = ModelConfig.OnDevice(template = "llama3")
+        val tertiary = ModelConfig.Mock
+
+        val cascadeConfig = ModelConfig.Cascade(
+            cascade = listOf(primary, secondary, tertiary),
+            timeoutSeconds = 30,
+            maxRetries = 2
+        )
+
+        assertEquals(3, cascadeConfig.cascade.size)
+        assertEquals(30, cascadeConfig.timeoutSeconds)
+        assertEquals(2, cascadeConfig.maxRetries)
+        assertTrue(cascadeConfig.cascade[0] is ModelConfig.DeepSeek)
+        assertTrue(cascadeConfig.cascade[1] is ModelConfig.OnDevice)
+        assertTrue(cascadeConfig.cascade[2] is ModelConfig.Mock)
+
+        val fallbackEvent = com.mobi.nooa.domain.ProviderFallbackEvent(
+            type = "providerFallback",
+            failedProvider = "deepseek-reasoner",
+            fallbackProvider = "on_device",
+            errorMessage = "HTTP 401 Unauthorized"
+        )
+
+        val resultWithFallback = AgentExecutionResult(
+            agentName = "AutonomousDeviceAgent",
+            goal = "Triage hardware",
+            resultText = "Completed via on-device fallback",
+            isSuccess = true,
+            fallbackHistory = listOf(fallbackEvent)
+        )
+
+        assertEquals(1, resultWithFallback.fallbackHistory.size)
+        assertEquals("deepseek-reasoner", resultWithFallback.fallbackHistory[0].failedProvider)
+        assertEquals("on_device", resultWithFallback.fallbackHistory[0].fallbackProvider)
+        assertEquals("HTTP 401 Unauthorized", resultWithFallback.fallbackHistory[0].errorMessage)
+    }
 }
