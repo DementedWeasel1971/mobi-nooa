@@ -1,0 +1,21 @@
+# Cursor AI Rules for mobi-nooa
+
+You are developing in the mobi-nooa repository. Follow these conventions at all times:
+
+1. **Architecture Invariants**:
+   - `mobi_nooa_core/` is 100% pure Dart (no Flutter or UI dependencies).
+   - `mobi_nooa_bridge/` is a headless Flutter "add-to-app" bridge forwarding MethodChannel calls into `AgentBridgeDispatcher`.
+   - `android_mobi_nooa/` is a Kotlin native library managing foreground services, workers, and on-device inference engines.
+2. **Modern Dart 3.x**:
+   - Use switch expressions and pattern matching for state dispatch.
+   - Use sealed classes for exhaustive domain state modeling.
+   - Use `const` constructors wherever possible.
+3. **NOOA Principles**:
+   - Wrap large return objects with `ObjectHeap.maybeWrap` (`#ref_xxx`).
+   - Access and mutate agent state via `NooaAgent.getState`/`setState`.
+   - Validate any dynamic code through `AstGuardrails.validate`.
+4. **Validation**:
+   - Run `dart analyze` and `dart test --exclude-tags live` in `mobi_nooa_core/`.
+   - Run `flutter test` in `mobi_nooa_bridge/`.
+   - Run `./gradlew :android_mobi_nooa:testDebugUnitTest` in `android_mobi_nooa/`.
+   - Refer to `AGENTS.md` and `.agents/rules/flutter_rules.md` for full guidelines.
