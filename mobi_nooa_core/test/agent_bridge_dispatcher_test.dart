@@ -219,6 +219,60 @@ void main() {
       final compactRes = await dispatcher.handle({'action': 'compactHeap'});
       expect(compactRes['success'], isTrue);
     });
+
+    test('skillifySession, runParallelSubagents, createPlan, and acp work through bridge dispatcher', () async {
+      final dispatcher = AgentBridgeDispatcher.withDefaults();
+
+      // 1. Test createPlan
+      final planRes = await dispatcher.handle({
+        'action': 'createPlan',
+        'goal': 'Refactor Authentication',
+        'steps': [
+          {'title': 'Audit tokens', 'description': 'Check auth_tokens.dart'},
+          {'title': 'Apply SHA-256', 'description': 'Hash secrets', 'requiresApproval': true},
+        ],
+      });
+      expect(planRes['success'], isTrue);
+      expect(planRes['plan'], isNotNull);
+      expect(planRes['plan']['totalSteps'], equals(2));
+
+      // 2. Test runParallelSubagents
+      final subagentsRes = await dispatcher.handle({
+        'action': 'runParallelSubagents',
+        'maxConcurrency': 4,
+        'tasks': [
+          {'id': 'sub_1', 'role': 'Auditor', 'prompt': 'Audit memory'},
+          {'id': 'sub_2', 'role': 'Cleaner', 'prompt': 'Clean caches'},
+        ],
+      });
+      expect(subagentsRes['success'], isTrue);
+      expect(subagentsRes['completedCount'], equals(2));
+
+      // 3. Test skillifySession
+      await dispatcher.handle({
+        'action': 'createSession',
+        'sessionId': 'session_for_skillify',
+      });
+      final skillifyRes = await dispatcher.handle({
+        'action': 'skillifySession',
+        'sessionId': 'session_for_skillify',
+        'skillName': 'synthesized-bridge-skill',
+      });
+      expect(skillifyRes['success'], isTrue);
+      expect(skillifyRes['name'], equals('synthesized-bridge-skill'));
+
+      // 4. Test ACP over bridge
+      final acpRes = await dispatcher.handle({
+        'action': 'acp',
+        'message': {
+          'jsonrpc': '2.0',
+          'id': 'acp_bridge_1',
+          'method': 'initialize',
+        },
+      });
+      expect(acpRes['id'], equals('acp_bridge_1'));
+      expect(acpRes['result']['protocolVersion'], equals('1.0.0'));
+    });
   });
 }
 

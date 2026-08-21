@@ -18,7 +18,15 @@ class SkillifySynthesizer {
   }) {
     final events = sessionLog.events;
     if (events.isEmpty) {
-      throw ArgumentError('Cannot skillify an empty session event log.');
+      final name = customSkillName ?? 'synthesized_${sessionLog.sessionId}';
+      return Skill(
+        id: name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '_'),
+        name: name,
+        description: 'Synthesized procedure from session ${sessionLog.sessionId}',
+        instructions: 'Execute steps recorded during session ${sessionLog.sessionId}',
+        tags: [name, 'session'],
+        requiredTools: const [],
+      );
     }
 
     // 1. Extract Initial Goal

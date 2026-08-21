@@ -42,5 +42,8 @@ class HarnessApi {
             DeviceResourceGovernor(
               harness: device ?? DefaultDeviceHarness(),
             );
+
+  /// Alias for [skill] (procedural skills harness).
+  SkillHarness get skills => skill;
 }
 

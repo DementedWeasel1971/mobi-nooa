@@ -1,5 +1,7 @@
 import 'skill.dart';
 import 'skill_store.dart';
+import 'skillify.dart';
+import '../session/session_event_log.dart';
 
 /// Model-callable harness for dynamic skill discovery, loading, and authoring.
 ///
@@ -67,5 +69,27 @@ class SkillHarness {
           'description': s.description,
           'tags': s.tags,
         }).toList();
+  }
+
+  /// Synthesizes a recorded session event log into a permanent procedural skill (/skillify).
+  Future<Map<String, dynamic>> skillifySession({
+    required dynamic sessionLog,
+    String? customSkillName,
+    String? category,
+  }) async {
+    if (sessionLog is! SessionEventLog) {
+      throw ArgumentError('sessionLog must be an instance of SessionEventLog');
+    }
+    final skill = await SkillifySynthesizer.skillifyAndSave(
+      sessionLog: sessionLog,
+      skillStore: store,
+      customSkillName: customSkillName,
+    );
+    return {
+      'status': 'skillified',
+      'skillId': skill.id,
+      'name': skill.name,
+      'toolsUsed': skill.requiredTools,
+    };
   }
 }

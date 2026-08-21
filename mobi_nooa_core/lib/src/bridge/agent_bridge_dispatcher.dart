@@ -32,6 +32,11 @@ import '../security/permission_policy.dart';
 import '../security/permission_manager.dart';
 import '../plugin/plugin_registry.dart';
 import '../session/session_event_log.dart';
+import '../agent/subagent_orchestrator.dart';
+import '../strategies/plan_mode_manager.dart';
+import '../skills/skillify.dart';
+import '../skills/skill_store.dart';
+import 'acp_dispatcher.dart';
 
 /// Factory for constructing a fresh [NooaAgent] instance by name.
 typedef AgentFactory = NooaAgent Function();
@@ -321,6 +326,67 @@ class AgentBridgeDispatcher {
           final durationMs = (request['durationMs'] as num?)?.toInt() ?? 200;
           await targetDevice.vibrate(durationMs: durationMs);
           return {'success': true};
+        case 'skillifySession':
+          final sessionId = request['sessionId'] as String?;
+          if (sessionId == null || !_sessions.containsKey(sessionId)) {
+            return {'error': 'Session not found: $sessionId'};
+          }
+          final customName = request['skillName'] as String?;
+          final synthesized = SkillifySynthesizer.distillSession(
+            sessionLog: _sessions[sessionId]!,
+            customSkillName: customName,
+          );
+          return {
+            'success': true,
+            'skillId': synthesized.id,
+            'name': synthesized.name,
+            'description': synthesized.description,
+            'tags': synthesized.tags,
+            'requiredTools': synthesized.requiredTools,
+            'instructions': synthesized.instructions,
+          };
+        case 'runParallelSubagents':
+          final tasksRaw = (request['tasks'] as List? ?? []).whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+          final concurrency = (request['maxConcurrency'] as num?)?.toInt() ?? 8;
+          final orchestrator = SubagentOrchestrator(
+            model: MockModelClient(),
+            maxConcurrency: concurrency,
+            agentFactories: _agentFactories,
+          );
+          final taskSpecs = tasksRaw.map((t) => SubagentTaskSpec(
+            id: t['id'] as String? ?? 'sub_${DateTime.now().millisecondsSinceEpoch}',
+            role: t['role'] as String? ?? 'Worker',
+            prompt: t['prompt'] as String? ?? 'Execute task',
+            agentTypeName: t['agentTypeName'] as String? ?? 'GeneralMobileAgent',
+            maxSteps: (t['maxSteps'] as num?)?.toInt() ?? 5,
+          )).toList();
+          final results = await orchestrator.runParallelBatch(taskSpecs);
+          return {
+            'success': true,
+            'results': results.map((r) => r.toJson()).toList(),
+            'completedCount': results.where((r) => r.isSuccess).length,
+          };
+        case 'createPlan':
+          final planManager = PlanModeManager();
+          final goal = request['goal'] as String? ?? 'Complex Task';
+          final stepsRaw = (request['steps'] as List? ?? []).whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+          final steps = stepsRaw.map((s) => PlanStep(
+            id: s['id'] as String? ?? 'step_${DateTime.now().millisecondsSinceEpoch}',
+            title: s['title'] as String? ?? 'Step',
+            description: s['description'] as String? ?? '',
+            diffPreview: s['diffPreview'] as String?,
+            requiresApproval: s['requiresApproval'] == true,
+          )).toList();
+          final plan = planManager.createPlan(goal: goal, steps: steps);
+          return {
+            'success': true,
+            'plan': plan.toJson(),
+          };
+        case 'acp':
+          final acpDispatcher = AcpDispatcher(bridgeDispatcher: this);
+          final jsonRpcReq = request['message'] ?? request['payload'] ?? request;
+          final acpRes = await acpDispatcher.handleJsonRpc(jsonRpcReq);
+          return acpRes.toJson();
         default:
           return {'error': 'Unknown or missing action: $action'};
       }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'nooa_agent.dart';
+import 'agent_context.dart';
 import '../loop/agent_loop.dart';
 import '../loop/loop_config.dart';
 import '../models/model_client.dart';
@@ -152,13 +153,23 @@ class SubagentOrchestrator {
   ) async {
     final sw = Stopwatch()..start();
     try {
+      final NooaAgent agent;
       final factory = _agentFactories[task.agentTypeName];
-      final agent = factory != null
-          ? factory()
-          : Quickstart.createAgent(
-              () => _DefaultSubagent(),
-              model: model,
-            );
+      if (factory != null) {
+        agent = Quickstart.createAgent(
+          factory,
+          model: model,
+          sessionLog: sessionLog,
+          tracer: tracer,
+        );
+      } else {
+        agent = Quickstart.createAgent(
+          () => _DefaultSubagent(),
+          model: model,
+          sessionLog: sessionLog,
+          tracer: tracer,
+        );
+      }
 
       final loop = AgentLoop(
         agent: agent,

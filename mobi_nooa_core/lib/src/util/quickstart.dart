@@ -19,6 +19,7 @@ class Quickstart {
     HarnessApi? harness,
     ObjectHeap? heap,
     String? tracerName,
+    Tracer? tracer,
     PermissionManager? permissionManager,
     PluginRegistry? plugins,
     SessionEventLog? sessionLog,
@@ -28,7 +29,7 @@ class Quickstart {
     final activeHeap = heap ?? ObjectHeap();
     final activeHarness = harness ?? HarnessApi();
     final activeModel = model ?? MockModelClient();
-    final activeTracer = Tracer(tracerName ?? agent.name);
+    final activeTracer = tracer ?? Tracer(tracerName ?? agent.name);
 
     final ctx = AgentContext(
       heap: activeHeap,

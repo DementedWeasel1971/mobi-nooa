@@ -5,6 +5,7 @@ import '../models/model_client.dart';
 import '../loop/agent_loop.dart';
 import '../loop/loop_config.dart';
 import '../tracing/trace_event.dart';
+import 'subagent_orchestrator.dart';
 
 /// Base class for all Mobile Object-Oriented Agents (mobi-nooa).
 ///
@@ -39,6 +40,9 @@ abstract class NooaAgent {
 
   /// Hook for subclasses to declare actions, state, and tools.
   void initAgent() {}
+
+  /// Whether an execution context is currently attached.
+  bool get hasContext => _context != null;
 
   /// Current execution context (model, heap, harness, tracer).
   AgentContext get context {
@@ -144,6 +148,20 @@ abstract class NooaAgent {
     );
 
     return await subagent.ellipsis(task, inputs: inputs);
+  }
+
+  /// Spawns a parallel swarm of subagents concurrently (Grok Build 8-Way Subagent Orchestrator).
+  Future<List<SubagentTaskResult>> spawnParallelSubagents(
+    List<SubagentTaskSpec> tasks, {
+    int maxConcurrency = 8,
+  }) async {
+    final orchestrator = SubagentOrchestrator(
+      model: context.model,
+      maxConcurrency: maxConcurrency,
+      tracer: context.tracer,
+      sessionLog: context.sessionLog,
+    );
+    return await orchestrator.runParallelBatch(tasks);
   }
 
   /// Disposes streams and resources.

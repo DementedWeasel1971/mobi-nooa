@@ -243,5 +243,30 @@ class AutonomousDeviceAgent extends NooaAgent {
         return {'status': 'policy_applied', 'policy': policy};
       },
     );
+
+    registerAction(
+      name: 'skillifyCurrentSession',
+      description: 'Distills the current session trajectory into a permanent procedural Skill recipe (/skillify).',
+      parameters: const [
+        ToolParameter(
+          name: 'skillName',
+          type: 'string',
+          description: 'Descriptive name for the distilled skill',
+          required: false,
+        ),
+      ],
+      returnType: 'Map<String, dynamic>',
+      invoker: (args) async {
+        final sessionLog = context.sessionLog;
+        if (sessionLog == null) {
+          return {'error': 'No active SessionEventLog attached to context.'};
+        }
+        final skillName = args['skillName'] as String?;
+        return await context.harness.skills.skillifySession(
+          sessionLog: sessionLog,
+          customSkillName: skillName,
+        );
+      },
+    );
   }
 }
