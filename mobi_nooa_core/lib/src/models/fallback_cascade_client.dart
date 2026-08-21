@@ -310,4 +310,10 @@ class FallbackCascadeClient implements ModelClient {
     }
     return null;
   }
+
+  /// Resets active candidate index back to 0 and clears failure records.
+  void reset() {
+    _activeClientIndex = 0;
+    _failureRecords.clear();
+  }
 }
