@@ -30,6 +30,8 @@ data class AgentExecutionUiState(
     val heapHandles: List<String> = emptyList(),
     val selectedHeapHandle: String? = null,
     val permissionRequest: PermissionApprovalRequest? = null,
+    val fallbackHistory: List<com.mobi.nooa.domain.ProviderFallbackEvent> = emptyList(),
+    val activeFallbackWarning: String? = null,
     val errorMessage: String? = null
 )
 
@@ -69,12 +71,19 @@ class AgentExecutionViewModel(
                         }
                     }
                     is AgentState.Success -> {
+                        val fallbackWarning = if (state.result.fallbackHistory.isNotEmpty()) {
+                            val lastFallback = state.result.fallbackHistory.last()
+                            "⚠️ Provider '${lastFallback.failedProvider}' failed. Recovered on fallback '${lastFallback.fallbackProvider ?: "secondary"}'."
+                        } else null
+
                         _uiState.update {
                             it.copy(
                                 isRunning = false,
                                 executionResult = state.result,
                                 heapHandles = state.result.heapHandles,
-                                currentStep = state.result.stepCount
+                                currentStep = state.result.stepCount,
+                                fallbackHistory = state.result.fallbackHistory,
+                                activeFallbackWarning = fallbackWarning
                             )
                         }
                     }

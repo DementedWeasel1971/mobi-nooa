@@ -9,7 +9,23 @@ sealed class ModelConfig {
     data class DeepSeek(val modelName: String = "deepseek-reasoner", val apiKey: String?) : ModelConfig()
     data class Nvidia(val modelName: String = "meta/llama-3.3-70b-instruct", val apiKey: String?) : ModelConfig()
     data class Cloud(val provider: String, val modelName: String? = null, val apiKey: String?) : ModelConfig()
+    data class Cascade(
+        val cascade: List<ModelConfig>,
+        val timeoutSeconds: Int = 25,
+        val maxRetries: Int = 1
+    ) : ModelConfig()
 }
+
+/**
+ * Observable provider fallback event.
+ */
+data class ProviderFallbackEvent(
+    val type: String,
+    val failedProvider: String,
+    val fallbackProvider: String?,
+    val errorMessage: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
 
 /**
  * Operating modes for agent execution safety.
@@ -34,6 +50,7 @@ data class AgentExecutionResult(
     val trace: List<Map<String, Any?>> = emptyList(),
     val state: Map<String, Any?> = emptyMap(),
     val heapHandles: List<String> = emptyList(),
+    val fallbackHistory: List<ProviderFallbackEvent> = emptyList(),
     val errorMessage: String? = null
 )
 

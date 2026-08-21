@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnStreamExecute: Button
     private lateinit var tvAstSecurityPill: TextView
     private lateinit var pbStreamProgress: ProgressBar
+    private lateinit var tvStreamFallbackBanner: TextView
     private lateinit var cardDeepSeekThinking: LinearLayout
     private lateinit var headerDeepSeekThinking: LinearLayout
     private lateinit var tvThinkingToggle: TextView
@@ -167,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         btnStreamExecute = findViewById(R.id.btnStreamExecute)
         tvAstSecurityPill = findViewById(R.id.tvAstSecurityPill)
         pbStreamProgress = findViewById(R.id.pbStreamProgress)
+        tvStreamFallbackBanner = findViewById(R.id.tvStreamFallbackBanner)
         cardDeepSeekThinking = findViewById(R.id.cardDeepSeekThinking)
         headerDeepSeekThinking = findViewById(R.id.headerDeepSeekThinking)
         tvThinkingToggle = findViewById(R.id.tvThinkingToggle)
@@ -322,12 +324,27 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val modelConfig: ModelConfig = when (provider) {
+        val primaryConfig: ModelConfig = when (provider) {
             "nvidia" -> ModelConfig.Nvidia(modelName = modelName, apiKey = apiKey)
             "deepseek" -> ModelConfig.DeepSeek(modelName = modelName, apiKey = apiKey)
             "on_device" -> ModelConfig.OnDevice(template = modelName)
             "mock" -> ModelConfig.Mock
             else -> ModelConfig.Cloud(provider = provider, modelName = modelName, apiKey = apiKey)
+        }
+
+        // Automatic fallback cascade to ensure connectivity never stalls the harness
+        val modelConfig: ModelConfig = if (primaryConfig !is ModelConfig.Mock) {
+            ModelConfig.Cascade(
+                cascade = listOf(
+                    primaryConfig,
+                    ModelConfig.OnDevice(template = "llama3"),
+                    ModelConfig.Mock
+                ),
+                timeoutSeconds = 25,
+                maxRetries = 1
+            )
+        } else {
+            ModelConfig.Mock
         }
 
         val selectedMode = when (rgOperatingMode.checkedRadioButtonId) {
@@ -336,9 +353,10 @@ class MainActivity : AppCompatActivity() {
             else -> AgentOperatingMode.AUTONOMOUS
         }
 
-        tvStreamConsole.text = "⚡ Launching $agentName...\nProvider: $provider\nModel: $modelName\nMode: $selectedMode\nGoal: $goal\n\nStarting loop..."
+        tvStreamConsole.text = "⚡ Launching $agentName...\nProvider: $provider\nModel: $modelName (with automated fallback cascade)\nMode: $selectedMode\nGoal: $goal\n\nStarting loop..."
         btnStreamExecute.isEnabled = false
         pbStreamProgress.visibility = View.VISIBLE
+        tvStreamFallbackBanner.visibility = View.GONE
         tvEngineStatusBadge.text = "● RUNNING"
         tvEngineStatusBadge.setTextColor(0xFF00E5FF.toInt())
         tvEngineStatusBadge.setBackgroundColor(0xFF101C24.toInt())
@@ -364,6 +382,14 @@ class MainActivity : AppCompatActivity() {
                         sb.append("========================================\n\n")
                         sb.append("AGENT RESULT:\n")
                         sb.append(execResult.resultText).append("\n\n")
+
+                        if (execResult.fallbackHistory.isNotEmpty()) {
+                            sb.append("⚠️ PROVIDER FAILOVER / FALLBACK HISTORY:\n")
+                            for (fb in execResult.fallbackHistory) {
+                                sb.append("  • [${fb.type}] ${fb.failedProvider} -> ${fb.fallbackProvider ?: "recovered"}: ${fb.errorMessage}\n")
+                            }
+                            sb.append("\n")
+                        }
 
                         if (execResult.heapHandles.isNotEmpty()) {
                             tvHeapHandlesChips.text = "Pass-by-Reference Handles: ${execResult.heapHandles.joinToString(", ")}"
@@ -400,7 +426,19 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 2. Observe Agent Loop State
+        // 2. Observe Agent Execution ViewModel & Fallback Warnings
+        lifecycleScope.launch {
+            executionViewModel.uiState.collect { state ->
+                if (state.activeFallbackWarning != null) {
+                    tvStreamFallbackBanner.visibility = View.VISIBLE
+                    tvStreamFallbackBanner.text = state.activeFallbackWarning
+                } else {
+                    tvStreamFallbackBanner.visibility = View.GONE
+                }
+            }
+        }
+
+        // 3. Observe Agent Loop State
         lifecycleScope.launch {
             agentViewModel.agentState.collect { state ->
                 when (state) {

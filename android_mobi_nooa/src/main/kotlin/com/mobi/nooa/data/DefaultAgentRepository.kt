@@ -42,14 +42,7 @@ class DefaultAgentRepository(
         )
 
         val startTime = System.currentTimeMillis()
-        val (provider, apiKey, modelName) = when (modelConfig) {
-            is ModelConfig.Mock -> Triple("mock", null, null)
-            is ModelConfig.OnDevice -> Triple("on_device", null, modelConfig.template)
-            is ModelConfig.DeepSeek -> Triple("deepseek", modelConfig.apiKey, modelConfig.modelName)
-            is ModelConfig.Nvidia -> Triple("nvidia", modelConfig.apiKey, modelConfig.modelName)
-            is ModelConfig.Cloud -> Triple(modelConfig.provider, modelConfig.apiKey, modelConfig.modelName)
-        }
-
+        val modelMap = modelConfig.toMap()
         val modeStr = operatingMode.name.lowercase()
 
         try {
@@ -58,9 +51,7 @@ class DefaultAgentRepository(
                 goal = goal,
                 inputs = inputs,
                 maxSteps = maxSteps,
-                modelProvider = provider,
-                modelApiKey = apiKey,
-                modelName = modelName,
+                modelConfigMap = modelMap,
                 operatingMode = modeStr
             )
 
@@ -81,6 +72,20 @@ class DefaultAgentRepository(
                 @Suppress("UNCHECKED_CAST")
                 val heapHandles = (response["heapHandles"] as? List<String>) ?: emptyList()
 
+                val fallbackHistory = trace.filter {
+                    val type = it["type"] as? String
+                    type == "providerError" || type == "providerFallback" || type == "providerRecovered"
+                }.map {
+                    @Suppress("UNCHECKED_CAST")
+                    val data = (it["data"] as? Map<String, Any?>) ?: emptyMap()
+                    com.mobi.nooa.domain.ProviderFallbackEvent(
+                        type = (it["type"] as? String) ?: "fallback",
+                        failedProvider = (data["failedProvider"] as? String) ?: (data["providerName"] as? String) ?: "unknown",
+                        fallbackProvider = data["fallbackProvider"] as? String,
+                        errorMessage = (data["errorMessage"] as? String) ?: (it["description"] as? String) ?: ""
+                    )
+                }
+
                 val executionResult = AgentExecutionResult(
                     agentName = agentName,
                     goal = goal,
@@ -90,7 +95,8 @@ class DefaultAgentRepository(
                     durationMs = duration,
                     trace = trace,
                     state = state,
-                    heapHandles = heapHandles
+                    heapHandles = heapHandles,
+                    fallbackHistory = fallbackHistory
                 )
 
                 _agentState.value = AgentState.Success(executionResult)
@@ -100,6 +106,20 @@ class DefaultAgentRepository(
             _agentState.value = AgentState.Failed(agentName, goal, e.message ?: "Unknown bridge error", e)
             Result.failure(e)
         }
+    }
+
+    private fun ModelConfig.toMap(): Map<String, Any?> = when (this) {
+        is ModelConfig.Mock -> mapOf("provider" to "mock")
+        is ModelConfig.OnDevice -> mapOf("provider" to "on_device", "template" to template)
+        is ModelConfig.DeepSeek -> mapOf("provider" to "deepseek", "apiKey" to apiKey, "modelName" to modelName)
+        is ModelConfig.Nvidia -> mapOf("provider" to "nvidia", "apiKey" to apiKey, "modelName" to modelName)
+        is ModelConfig.Cloud -> mapOf("provider" to provider, "apiKey" to apiKey, "modelName" to modelName)
+        is ModelConfig.Cascade -> mapOf(
+            "provider" to "cascade",
+            "cascade" to cascade.map { it.toMap() },
+            "providerTimeoutSeconds" to timeoutSeconds,
+            "maxRetriesPerProvider" to maxRetries
+        )
     }
 
     override suspend fun listRegisteredAgents(): Result<List<String>> = withContext(Dispatchers.Default) {

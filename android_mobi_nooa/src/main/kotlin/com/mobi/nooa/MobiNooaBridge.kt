@@ -84,8 +84,15 @@ class MobiNooaBridge private constructor(context: Context) {
         modelApiKey: String? = null,
         modelBaseUrl: String? = null,
         modelName: String? = null,
+        modelConfigMap: Map<String, Any?>? = null,
         operatingMode: String = "autonomous",
     ): Map<String, Any?> {
+        val resolvedModel = modelConfigMap ?: mapOf(
+            "provider" to modelProvider,
+            "apiKey" to modelApiKey,
+            "baseUrl" to modelBaseUrl,
+            "modelName" to modelName,
+        )
         val request = mutableMapOf<String, Any?>(
             "action" to "runAgentLoop",
             "agentName" to agentName,
@@ -93,12 +100,7 @@ class MobiNooaBridge private constructor(context: Context) {
             "inputs" to inputs,
             "maxSteps" to maxSteps,
             "operatingMode" to operatingMode,
-            "model" to mapOf(
-                "provider" to modelProvider,
-                "apiKey" to modelApiKey,
-                "baseUrl" to modelBaseUrl,
-                "modelName" to modelName,
-            ),
+            "model" to resolvedModel,
         )
         if (initialState != null) {
             request["initialState"] = initialState

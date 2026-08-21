@@ -1,4 +1,5 @@
 import '../agent/operating_mode.dart';
+import '../models/model_client.dart';
 import '../security/permission_manager.dart';
 import '../plugin/plugin_registry.dart';
 import '../session/session_event_log.dart';
@@ -23,6 +24,9 @@ class LoopConfig {
   final PermissionManager? permissionManager;
   final PluginRegistry? plugins;
   final SessionEventLog? sessionLog;
+  final List<ModelClient> fallbackClients;
+  final Duration fallbackTimeout;
+  final int maxRetriesPerFallback;
 
   const LoopConfig({
     this.maxSteps = 10,
@@ -36,5 +40,9 @@ class LoopConfig {
     this.permissionManager,
     this.plugins,
     this.sessionLog,
+    this.fallbackClients = const [],
+    this.fallbackTimeout = const Duration(seconds: 25),
+    this.maxRetriesPerFallback = 1,
   });
 }
+

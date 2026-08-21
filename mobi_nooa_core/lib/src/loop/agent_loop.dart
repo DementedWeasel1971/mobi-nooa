@@ -7,6 +7,7 @@ import '../agent/agent_context.dart';
 import '../agent/reflector.dart';
 import '../agent/operating_mode.dart';
 import '../models/model_client.dart';
+import '../models/fallback_cascade_client.dart';
 import '../tracing/trace_event.dart';
 import '../engine/sandboxed_environment.dart';
 import '../engine/code_act_engine.dart';
@@ -34,6 +35,7 @@ class AgentLoop {
   late final PluginRegistry _plugins;
   late final SessionEventLog? _sessionLog;
   late final AgentOperatingMode _operatingMode;
+  late final ModelClient _effectiveModel;
 
   AgentLoop({
     required this.agent,
@@ -46,6 +48,22 @@ class AgentLoop {
     _operatingMode = config.operatingMode != AgentOperatingMode.autonomous
         ? config.operatingMode
         : context.operatingMode;
+
+    if (config.fallbackClients.isNotEmpty) {
+      if (context.model is FallbackCascadeClient) {
+        _effectiveModel = context.model;
+      } else {
+        _effectiveModel = FallbackCascadeClient(
+          cascade: [context.model, ...config.fallbackClients],
+          providerTimeout: config.fallbackTimeout,
+          maxRetriesPerProvider: config.maxRetriesPerFallback,
+          tracer: context.tracer,
+          sessionLog: _sessionLog,
+        );
+      }
+    } else {
+      _effectiveModel = context.model;
+    }
 
     _sandbox = SandboxedEnvironment(
       heap: context.heap,
@@ -144,7 +162,7 @@ class AgentLoop {
       }
 
       try {
-        final response = await context.model.generate(
+        final response = await _effectiveModel.generate(
           messages: messages,
           tools: tools.isNotEmpty ? tools : null,
           temperature: config.temperature,

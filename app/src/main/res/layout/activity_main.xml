@@ -363,6 +363,19 @@
                     android:visibility="gone"
                     android:layout_marginTop="12dp" />
 
+                <!-- Provider Fallback Cascade Banner -->
+                <TextView
+                    android:id="@+id/tvStreamFallbackBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⚠️ Provider failover: Cascading to secondary provider..."
+                    android:textColor="#FF9100"
+                    android:textSize="11sp"
+                    android:background="#2E1E16"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:layout_marginTop="8dp" />
+
                 <!-- DeepSeek-R1 Expandable Thinking Accordion -->
                 <LinearLayout
                     android:id="@+id/cardDeepSeekThinking"

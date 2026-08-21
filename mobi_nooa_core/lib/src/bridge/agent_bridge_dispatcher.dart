@@ -15,6 +15,7 @@ import '../models/ollama_client.dart';
 import '../models/on_device_client.dart';
 import '../models/nvidia_client.dart';
 import '../models/deepseek_client.dart';
+import '../models/fallback_cascade_client.dart';
 import '../util/quickstart.dart';
 
 import '../harness/harness_api.dart';
@@ -152,6 +153,27 @@ class AgentBridgeDispatcher {
         baseUrl: config['baseUrl'] as String? ?? 'https://api.deepseek.com',
       ),
     );
+    dispatcher.registerModelProvider(
+      'cascade',
+      (config) {
+        final rawCascade = (config['cascade'] as List? ?? [])
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m))
+            .map((cfg) {
+              final pName = cfg['provider'] as String? ?? 'mock';
+              final f = dispatcher._modelFactories[pName];
+              return f != null ? f(cfg) : MockModelClient();
+            })
+            .toList();
+        final timeoutSec = (config['providerTimeoutSeconds'] as num?)?.toInt() ?? 25;
+        final retries = (config['maxRetriesPerProvider'] as num?)?.toInt() ?? 1;
+        return FallbackCascadeClient(
+          cascade: rawCascade.isNotEmpty ? rawCascade : [MockModelClient()],
+          providerTimeout: Duration(seconds: timeoutSec),
+          maxRetriesPerProvider: retries,
+        );
+      },
+    );
 
     return dispatcher;
   }
@@ -286,19 +308,6 @@ class AgentBridgeDispatcher {
     );
     final maxSteps = (request['maxSteps'] as num?)?.toInt() ?? 10;
 
-    final modelConfig = Map<String, dynamic>.from(
-      (request['model'] as Map?) ?? {},
-    );
-    final providerName = modelConfig['provider'] as String? ?? 'mock';
-    final modelFactory = _modelFactories[providerName];
-    final model = modelFactory != null
-        ? modelFactory(modelConfig)
-        : MockModelClient();
-
-    final harness = HarnessApi(
-      device: deviceHarness ?? DefaultDeviceHarness(),
-    );
-
     // Optional session logging
     SessionEventLog? sessionLog;
     final sessionId = request['sessionId'] as String?;
@@ -306,10 +315,44 @@ class AgentBridgeDispatcher {
       sessionLog = _sessions.putIfAbsent(sessionId, () => SessionEventLog(sessionId: sessionId));
     }
 
+    final modelConfig = Map<String, dynamic>.from(
+      (request['model'] as Map?) ?? {},
+    );
+    ModelClient model;
+    if (modelConfig.containsKey('cascade') && modelConfig['cascade'] is List) {
+      final rawCascade = (modelConfig['cascade'] as List)
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .map((cfg) {
+            final pName = cfg['provider'] as String? ?? 'mock';
+            final f = _modelFactories[pName];
+            return f != null ? f(cfg) : MockModelClient();
+          })
+          .toList();
+      final timeoutSec = (modelConfig['providerTimeoutSeconds'] as num?)?.toInt() ?? 25;
+      final retries = (modelConfig['maxRetriesPerProvider'] as num?)?.toInt() ?? 1;
+      model = FallbackCascadeClient(
+        cascade: rawCascade.isNotEmpty ? rawCascade : [MockModelClient()],
+        providerTimeout: Duration(seconds: timeoutSec),
+        maxRetriesPerProvider: retries,
+        sessionLog: sessionLog,
+      );
+    } else {
+      final providerName = modelConfig['provider'] as String? ?? 'mock';
+      final modelFactory = _modelFactories[providerName];
+      model = modelFactory != null
+          ? modelFactory(modelConfig)
+          : MockModelClient();
+    }
+
     final modeName = request['operatingMode'] as String? ?? 'autonomous';
     final operatingMode = AgentOperatingMode.values.firstWhere(
       (m) => m.name == modeName,
       orElse: () => AgentOperatingMode.autonomous,
+    );
+
+    final harness = HarnessApi(
+      device: deviceHarness ?? DefaultDeviceHarness(),
     );
 
     final agent = Quickstart.createAgent(
