@@ -7,6 +7,7 @@
     <application
         android:label="mobi-nooa"
         android:allowBackup="true"
+        android:theme="@style/AppTheme"
         android:icon="@android:drawable/sym_def_app_icon">
 
         <activity

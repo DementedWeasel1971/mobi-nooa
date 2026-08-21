@@ -141,31 +141,34 @@ class MobiNooaBridge private constructor(context: Context) {
         invoke(mapOf("action" to "getLatestCheckpoint", "agentName" to agentName))
 
     private suspend fun invoke(request: Map<String, Any?>): Map<String, Any?> =
-        suspendCancellableCoroutine { continuation ->
-            channel.invokeMethod(
-                "handle",
-                request,
-                object : MethodChannel.Result {
-                    override fun success(result: Any?) {
-                        @Suppress("UNCHECKED_CAST")
-                        continuation.resume(result as? Map<String, Any?> ?: emptyMap())
-                    }
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+            suspendCancellableCoroutine { continuation ->
+                channel.invokeMethod(
+                    "handle",
+                    request,
+                    object : MethodChannel.Result {
+                        override fun success(result: Any?) {
+                            @Suppress("UNCHECKED_CAST")
+                            continuation.resume(result as? Map<String, Any?> ?: emptyMap())
+                        }
 
-                    override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
-                        continuation.resume(
-                            mapOf(
-                                "error" to (errorMessage ?: errorCode),
-                                "details" to errorDetails?.toString(),
+                        override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
+                            continuation.resume(
+                                mapOf(
+                                    "error" to (errorMessage ?: errorCode),
+                                    "details" to errorDetails?.toString(),
+                                )
                             )
-                        )
-                    }
+                        }
 
-                    override fun notImplemented() {
-                        continuation.resume(mapOf("error" to "Dart bridge entrypoint not implemented"))
+                        override fun notImplemented() {
+                            continuation.resume(mapOf("error" to "Dart bridge entrypoint not implemented"))
+                        }
                     }
-                },
-            )
+                )
+            }
         }
+
 
     /** Releases the underlying Flutter engine. Call when no agent work remains. */
     fun dispose() {
