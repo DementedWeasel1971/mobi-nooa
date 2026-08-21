@@ -107,6 +107,33 @@ test('buildMethodCallHandler forwards decoded JSON into the dispatcher', () asyn
   expect(result, isA<Map<String, dynamic>>());
   expect((result as Map<String, dynamic>)['error'], isNull);
 });
+
+test('Bridge executes Grok Build harness actions (ACP, Subagents, Plan Mode, /skillify)', () async {
+  final dispatcher = AgentBridgeDispatcher.withDefaults();
+
+  // 1. Plan Mode
+  final plan = await dispatcher.handle({
+    'action': 'createPlan',
+    'goal': 'Refactor Storage',
+    'steps': [{'title': 'Migrate SQLite', 'description': 'Run DDL'}],
+  });
+  expect(plan['success'], isTrue);
+
+  // 2. Parallel Subagents
+  final subagents = await dispatcher.handle({
+    'action': 'runParallelSubagents',
+    'maxConcurrency': 4,
+    'tasks': [{'id': 'sub_1', 'role': 'Auditor', 'prompt': 'Audit memory'}],
+  });
+  expect(subagents['success'], isTrue);
+
+  // 3. ACP JSON-RPC
+  final acp = await dispatcher.handle({
+    'action': 'acp',
+    'message': {'jsonrpc': '2.0', 'id': 'test_acp', 'method': 'initialize'},
+  });
+  expect(acp['result']['protocolVersion'], equals('1.0.0'));
+});
 ```
 
 ---

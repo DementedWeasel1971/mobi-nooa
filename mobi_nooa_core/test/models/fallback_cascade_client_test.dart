@@ -346,30 +346,6 @@ void main() {
     test('Permutation 7: Mid-trajectory fallback: Step 1 tool call succeeds on Primary -> Step 2 Primary crashes -> Secondary synthesizes answer with full conversation context', () async {
       final sessionLog = SessionEventLog(sessionId: 'mid_trajectory_session');
 
-      // Primary succeeds on step 1 (issues tool call), but crashes on step 2 (final answer synthesis)
-      final primary = MockFailingModelClient(
-        modelName: 'primary-cloud',
-        errorToThrow: Exception('HTTP 500 Internal Error on Step 2 synthesis'),
-      );
-      // We configure a two-step client
-      int primaryCalls = 0;
-      final dynamicPrimary = MockConfigurableModelClient(
-        modelName: 'primary-cloud',
-        responses: [],
-      );
-
-      final cascadePrimary = MockConfigurableModelClient(
-        modelName: 'primary-cloud',
-        responses: [
-          ModelResponse(
-            text: 'I will inspect device battery.',
-            toolCalls: [
-              ToolCall(id: 'call_01', name: 'getBatteryStatus', arguments: {}),
-            ],
-          ),
-        ],
-      );
-
       // Primary client that throws on call 2
       final stepTwoCrashingPrimary = _TwoStepCrashingClient();
 

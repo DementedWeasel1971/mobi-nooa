@@ -58,10 +58,10 @@ void main() {
 
       expect(res.text, equals('Inspecting device status.'));
       expect(res.reasoningContent, equals('User requested battery diagnostics.'));
-      expect(res.toolCalls, isNotNull);
-      expect(res.toolCalls!.first.name, equals('getBatteryStatus'));
-      expect(res.toolCalls!.first.arguments['detailed'], isTrue);
-      expect(res.usage?.totalTokens, equals(60));
+      expect(res.toolCalls, isNotEmpty);
+      expect(res.toolCalls.first.name, equals('getBatteryStatus'));
+      expect(res.toolCalls.first.arguments['detailed'], isTrue);
+      expect(res.usage.totalTokens, equals(60));
     });
 
     // -------------------------------------------------------------

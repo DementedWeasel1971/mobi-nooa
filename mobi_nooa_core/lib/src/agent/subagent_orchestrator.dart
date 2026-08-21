@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'nooa_agent.dart';
-import 'agent_context.dart';
 import '../loop/agent_loop.dart';
 import '../loop/loop_config.dart';
 import '../models/model_client.dart';

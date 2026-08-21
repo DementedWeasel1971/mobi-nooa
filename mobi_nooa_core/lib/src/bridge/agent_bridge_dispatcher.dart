@@ -20,7 +20,6 @@ import '../models/fallback_cascade_client.dart';
 import '../util/quickstart.dart';
 import '../governor/resource_governor.dart';
 import '../heap/object_heap.dart';
-import '../plugin/agent_plugin.dart';
 import '../plugin/built_in_plugins.dart';
 
 import '../harness/harness_api.dart';
@@ -35,7 +34,6 @@ import '../session/session_event_log.dart';
 import '../agent/subagent_orchestrator.dart';
 import '../strategies/plan_mode_manager.dart';
 import '../skills/skillify.dart';
-import '../skills/skill_store.dart';
 import 'acp_dispatcher.dart';
 
 /// Factory for constructing a fresh [NooaAgent] instance by name.

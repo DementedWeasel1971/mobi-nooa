@@ -98,3 +98,23 @@ flutter test
 # 3. Android Kotlin Architecture Tests
 ./gradlew :android_mobi_nooa:testDebugUnitTest
 ```
+
+---
+
+## 🔄 6. The Closed-Loop Architecture & Platform Bridge Cycle
+
+When designing, implementing, or refactoring cross-platform agentic capabilities, follow the strict **5-Phase Closed-Loop Architecture Cycle**:
+
+1. **DEFINE**:
+   - Audit cross-language boundaries (Dart `AgentBridgeDispatcher` ↔ Flutter `MethodChannel` ↔ Kotlin `MobiNooaBridge`).
+   - Ensure all failure modes map to standardized JSON-RPC 2.0 / ACP error objects (`code`, `message`, `data`).
+2. **DESIGN**:
+   - Expose typed Kotlin suspend functions in `MobiNooaBridge.kt` matching each Dart bridge action (`skillifySession`, `runParallelSubagents`, `createPlan`, `handleAcp`).
+   - Ensure subagents dynamically instantiated from factories receive complete `AgentContext` attachments via `Quickstart.createAgent(factory, model: model, sessionLog: sessionLog, tracer: tracer)`.
+3. **BUILD**:
+   - Write clean, non-blocking asynchronous implementations using Dart 3 pattern matching and Kotlin Coroutines with `Dispatchers.Main` / `Dispatchers.Default`.
+4. **TEST**:
+   - Execute the complete 4-Tier Testing Pyramid (Dart core, Flutter bridge shim, Android JVM, on-device instrumentation).
+5. **IMPLEMENT**:
+   - Commit atomic, verifiable changes accompanied by architecture review logs.
+
