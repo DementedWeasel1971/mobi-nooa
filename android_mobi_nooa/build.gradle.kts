@@ -63,11 +63,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
 
-afterEvaluate {
-    val copyFlutterTask = rootProject.findProject(":flutter")?.tasks?.findByName("copyFlutterAssetsDebug")
-    if (copyFlutterTask != null) {
-        tasks.matching { it.name == "mergeDebugAndroidTestAssets" }.configureEach {
-            dependsOn(copyFlutterTask)
-        }
-    }
+tasks.matching { it.name.contains("AndroidTestAssets") || it.name == "mergeDebugAndroidTestAssets" }.configureEach {
+    dependsOn(":flutter:copyFlutterAssetsDebug")
 }
+
