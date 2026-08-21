@@ -15,6 +15,7 @@ import '../models/ollama_client.dart';
 import '../models/on_device_client.dart';
 import '../models/nvidia_client.dart';
 import '../models/deepseek_client.dart';
+import '../models/grok_client.dart';
 import '../models/fallback_cascade_client.dart';
 import '../util/quickstart.dart';
 import '../governor/resource_governor.dart';
@@ -155,6 +156,14 @@ class AgentBridgeDispatcher {
         apiKey: config['apiKey'] as String? ?? '',
         modelName: config['modelName'] as String? ?? 'deepseek-chat',
         baseUrl: config['baseUrl'] as String? ?? 'https://api.deepseek.com',
+      ),
+    );
+    dispatcher.registerModelProvider(
+      'grok',
+      (config) => GrokClient(
+        apiKey: config['apiKey'] as String? ?? '',
+        modelName: config['modelName'] as String? ?? 'grok-2-1212',
+        baseUrl: config['baseUrl'] as String? ?? 'https://api.x.ai/v1',
       ),
     );
     dispatcher.registerModelProvider(
@@ -408,6 +417,7 @@ class AgentBridgeDispatcher {
       );
 
       return {
+        'success': true,
         'result': result,
         'agentName': agent.name,
         'state': agent.getStateSnapshot(),

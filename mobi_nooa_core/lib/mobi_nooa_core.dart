@@ -13,6 +13,7 @@ export 'src/agent/data_analyst_agent.dart';
 export 'src/agent/autonomous_coding_agent.dart';
 export 'src/agent/operating_mode.dart';
 export 'src/agent/reflector.dart';
+export 'src/agent/subagent_orchestrator.dart';
 
 // Object Heap & Pass-by-Reference (Principle 2)
 export 'src/heap/object_reference.dart';
@@ -39,6 +40,7 @@ export 'src/models/ollama_client.dart';
 export 'src/models/on_device_client.dart';
 export 'src/models/nvidia_client.dart';
 export 'src/models/deepseek_client.dart';
+export 'src/models/grok_client.dart';
 export 'src/models/fallback_cascade_client.dart';
 
 // Model-Callable Harness APIs (Principle 6)
@@ -61,11 +63,12 @@ export 'src/security/ast_guardrails.dart';
 export 'src/security/permission_policy.dart';
 export 'src/security/permission_manager.dart';
 
-// Plugin System & Service Seam (DeepSeek Harness Architecture)
+// Plugin System & Service Seam (DeepSeek Harness Architecture & Grok Build Hooks)
 export 'src/plugin/agent_plugin.dart';
 export 'src/plugin/plugin_context.dart';
 export 'src/plugin/plugin_registry.dart';
 export 'src/plugin/built_in_plugins.dart';
+export 'src/plugin/lifecycle_hooks.dart';
 
 // Append-Only Session Event Log, Replay & Forking (DeepSeek Harness Architecture)
 export 'src/session/session_event.dart';
@@ -79,26 +82,29 @@ export 'src/memory/owner_gated_memory.dart';
 export 'src/storage/agent_checkpoint.dart';
 export 'src/storage/state_storage_manager.dart';
 
-// Skills & Procedural Knowledge (nooa-skills)
+// Skills & Procedural Knowledge (nooa-skills & Grok Build /skillify)
 export 'src/skills/skill.dart';
 export 'src/skills/skill_store.dart';
 export 'src/skills/skill_harness.dart';
 export 'src/skills/skill_prompt_enhancer.dart';
+export 'src/skills/skillify.dart';
 
-// Execution Strategies (nooa.strategies)
+// Execution Strategies & Plan-First Mode (nooa.strategies & Grok Build Plan Mode)
 export 'src/strategies/execution_strategy.dart';
 export 'src/strategies/react_strategy.dart';
 export 'src/strategies/code_act_strategy.dart';
 export 'src/strategies/plan_and_solve_strategy.dart';
 export 'src/strategies/self_reflection_strategy.dart';
+export 'src/strategies/plan_mode_manager.dart';
 
 // Benchmarking & Evaluation Suite (nooa.bench & SWE-bench)
 export 'src/bench/benchmark_suite.dart';
 export 'src/bench/swe_bench_runner.dart';
 export 'src/bench/mobile_bench_runner.dart';
 
-// Platform bridge dispatcher (pure-Dart, no Flutter dependency)
+// Platform Bridge & Agent Client Protocol (ACP JSON-RPC 2.0)
 export 'src/bridge/agent_bridge_dispatcher.dart';
+export 'src/bridge/acp_dispatcher.dart';
 
 // Utilities & Quickstart (nooa.util)
 export 'src/util/quickstart.dart';
