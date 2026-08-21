@@ -1,17 +1,29 @@
 package com.mobi.nooa.app
 
-import android.app.Activity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
+import com.mobi.nooa.di.MobiNooaContainer
+import com.mobi.nooa.presentation.AgentViewModel
+import com.mobi.nooa.presentation.MobiNooaViewModelFactory
 
 /**
- * Minimal launcher Activity for the `app` host module. This module exists
- * solely to satisfy the Flutter Gradle plugin's add-to-app requirement for
- * a `com.android.application` host project (see build.gradle.kts and
- * docs/decisions/0007-close-dart-android-bridge-gap.md) — it has no UI of
- * its own beyond this placeholder Activity.
+ * Android Host Activity demonstrating Clean Architecture initialization with
+ * [MobiNooaContainer] and [AgentViewModel].
  */
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var container: MobiNooaContainer
+    private lateinit var agentViewModel: AgentViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize lightweight Dependency Container
+        container = MobiNooaContainer(applicationContext)
+
+        // Instantiate ViewModel using the Custom Factory
+        val factory = MobiNooaViewModelFactory(container)
+        agentViewModel = ViewModelProvider(this, factory)[AgentViewModel::class.java]
     }
 }

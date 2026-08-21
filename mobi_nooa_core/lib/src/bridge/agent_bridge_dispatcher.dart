@@ -5,6 +5,7 @@ import '../agent/bench_agent.dart';
 import '../agent/autonomous_device_agent.dart';
 import '../agent/data_analyst_agent.dart';
 import '../agent/autonomous_coding_agent.dart';
+import '../agent/operating_mode.dart';
 import '../models/model_client.dart';
 import '../models/mock_client.dart';
 import '../models/gemini_client.dart';
@@ -13,6 +14,7 @@ import '../models/anthropic_client.dart';
 import '../models/ollama_client.dart';
 import '../models/on_device_client.dart';
 import '../models/nvidia_client.dart';
+import '../models/deepseek_client.dart';
 import '../util/quickstart.dart';
 
 import '../harness/harness_api.dart';
@@ -20,6 +22,10 @@ import '../harness/device_harness.dart';
 import '../harness/sqlite_harness.dart';
 import '../storage/agent_checkpoint.dart';
 import '../storage/state_storage_manager.dart';
+import '../security/permission_policy.dart';
+import '../security/permission_manager.dart';
+import '../plugin/plugin_registry.dart';
+import '../session/session_event_log.dart';
 
 /// Factory for constructing a fresh [NooaAgent] instance by name.
 typedef AgentFactory = NooaAgent Function();
@@ -31,24 +37,12 @@ typedef ModelClientFactory = ModelClient Function(Map<String, dynamic> config);
 /// Transport-agnostic request/response dispatcher for driving mobi-nooa
 /// agents from a host platform (Android/Kotlin, iOS/Swift, a CLI, or a test
 /// harness) over a plain JSON-serializable message protocol.
-///
-/// This class deliberately has **no Flutter/platform-channel dependency** —
-/// it is pure Dart, so it stays inside `mobi_nooa_core` without violating
-/// the "no Flutter/dart:ui in core" invariant (see `DESIGN.md`). A thin
-/// platform-specific shim (e.g. a Flutter `MethodChannel` handler, or an
-/// HTTP/stdio server) is expected to decode incoming messages into a
-/// `Map<String, dynamic>`, call [handle], and re-encode the response.
-///
-/// Supported actions (`request['action']`):
-/// - `'listAgents'` → `{'agents': [...]}`
-/// - `'runAgentLoop'` → runs `agent.ellipsis(goal, ...)` to completion and
-///   returns `{'result': ..., 'trace': [...]}` or `{'error': ...}`.
-/// - `'getDeviceStatus'` → returns `{'status': {...}}`
-/// - `'sendNotification'` → emits system notification via device harness
-/// - `'vibrate'` → triggers device haptic vibration
 class AgentBridgeDispatcher {
   final Map<String, AgentFactory> _agentFactories = {};
   final Map<String, ModelClientFactory> _modelFactories = {};
+  final Map<String, SessionEventLog> _sessions = {};
+  final PluginRegistry pluginRegistry;
+  PermissionManager permissionManager;
   DeviceHarness? deviceHarness;
   final StateStorageManager storage;
 
@@ -56,20 +50,22 @@ class AgentBridgeDispatcher {
     DeviceHarness? deviceHarness,
     NativeDeviceBridge? deviceBridge,
     StateStorageManager? storage,
+    PermissionManager? permissionManager,
+    PluginRegistry? pluginRegistry,
   })  : deviceHarness = deviceHarness ??
             (deviceBridge != null
                 ? NativeBridgeDeviceHarness(deviceBridge)
                 : null),
-        storage = storage ?? StateStorageManager(sqlite: InMemorySqliteHarness());
+        storage = storage ?? StateStorageManager(sqlite: InMemorySqliteHarness()),
+        permissionManager = permissionManager ?? PermissionManager(),
+        pluginRegistry = pluginRegistry ?? PluginRegistry();
 
-  /// Registers an agent constructor under [name], callable from the bridge
-  /// via `{"action": "runAgentLoop", "agentName": name, ...}`.
+  /// Registers an agent constructor under [name].
   void registerAgent(String name, AgentFactory factory) {
     _agentFactories[name] = factory;
   }
 
-  /// Registers a model provider constructor under [providerName], callable
-  /// via `request['model'] = {"provider": providerName, ...config}`.
+  /// Registers a model provider constructor under [providerName].
   void registerModelProvider(String providerName, ModelClientFactory factory) {
     _modelFactories[providerName] = factory;
   }
@@ -78,8 +74,7 @@ class AgentBridgeDispatcher {
   List<String> get registeredAgentNames => _agentFactories.keys.toList();
 
   /// Convenience constructor pre-registering the reference agents
-  /// (`GeneralMobileAgent`, `BenchAgent`) and known model providers
-  /// (`gemini`, `openai`, `anthropic`, `ollama`, `on_device`, `mock`).
+  /// and model providers (including DeepSeek and Nvidia).
   factory AgentBridgeDispatcher.withDefaults({
     DeviceHarness? deviceHarness,
     NativeDeviceBridge? deviceBridge,
@@ -149,14 +144,19 @@ class AgentBridgeDispatcher {
         baseUrl: config['baseUrl'] as String? ?? 'https://integrate.api.nvidia.com/v1',
       ),
     );
+    dispatcher.registerModelProvider(
+      'deepseek',
+      (config) => DeepSeekClient(
+        apiKey: config['apiKey'] as String? ?? '',
+        modelName: config['modelName'] as String? ?? 'deepseek-chat',
+        baseUrl: config['baseUrl'] as String? ?? 'https://api.deepseek.com',
+      ),
+    );
 
     return dispatcher;
   }
 
-  /// Handles one decoded JSON request and returns a JSON-serializable
-  /// response map. Never throws — all errors are captured into
-  /// `{'error': ..., 'stack': ...}` so a platform bridge can always encode
-  /// a response back to the caller.
+  /// Handles one decoded JSON request and returns a JSON-serializable response map.
   Future<Map<String, dynamic>> handle(Map<String, dynamic> request) async {
     try {
       final action = request['action'] as String?;
@@ -176,6 +176,61 @@ class AgentBridgeDispatcher {
           return {'models': []};
         case 'runAgentLoop':
           return await _runAgentLoop(request);
+        case 'createSession':
+          final sessionId = request['sessionId'] as String? ??
+              'session_${DateTime.now().millisecondsSinceEpoch}';
+          final sessionLog = SessionEventLog(sessionId: sessionId);
+          _sessions[sessionId] = sessionLog;
+          return {'sessionId': sessionId, 'created': true};
+        case 'replaySession':
+          final sessionId = request['sessionId'] as String?;
+          if (sessionId == null || !_sessions.containsKey(sessionId)) {
+            return {'error': 'Session not found: $sessionId'};
+          }
+          final toStep = (request['toStepIndex'] as num?)?.toInt() ?? 999;
+          final replay = _sessions[sessionId]!.replay(toStep);
+          return {
+            'sessionId': sessionId,
+            'stepIndex': replay.stepIndex,
+            'state': replay.state,
+            'eventCount': replay.eventHistory.length,
+          };
+        case 'forkSession':
+          final sourceId = request['sourceSessionId'] as String?;
+          final newSessionId = request['newSessionId'] as String? ??
+              'fork_${DateTime.now().millisecondsSinceEpoch}';
+          if (sourceId == null || !_sessions.containsKey(sourceId)) {
+            return {'error': 'Source session not found: $sourceId'};
+          }
+          final fromStep = (request['fromStepIndex'] as num?)?.toInt();
+          final forked = _sessions[sourceId]!.fork(
+            newSessionId: newSessionId,
+            fromStepIndex: fromStep,
+          );
+          _sessions[newSessionId] = forked;
+          return {
+            'newSessionId': newSessionId,
+            'eventCount': forked.events.length,
+          };
+        case 'listPlugins':
+          return {
+            'plugins': pluginRegistry.plugins.map((p) => {
+                  'name': p.name,
+                  'version': p.version,
+                  'description': p.description,
+                  'enabled': p.isEnabled,
+                }).toList(),
+          };
+        case 'setPermissionPolicy':
+          final policyName = request['policy'] as String? ?? 'defaultMobile';
+          if (policyName == 'strictAudit') {
+            permissionManager = PermissionManager(policy: PermissionPolicy.strictAudit());
+          } else if (policyName == 'permissive') {
+            permissionManager = PermissionManager(policy: PermissionPolicy.permissive());
+          } else {
+            permissionManager = PermissionManager(policy: PermissionPolicy.defaultMobile());
+          }
+          return {'success': true, 'policy': policyName};
         case 'saveCheckpoint':
           final checkpointJson = request['checkpoint'] as Map<String, dynamic>?;
           if (checkpointJson == null) return {'error': 'Missing checkpoint payload'};
@@ -244,10 +299,27 @@ class AgentBridgeDispatcher {
       device: deviceHarness ?? DefaultDeviceHarness(),
     );
 
+    // Optional session logging
+    SessionEventLog? sessionLog;
+    final sessionId = request['sessionId'] as String?;
+    if (sessionId != null) {
+      sessionLog = _sessions.putIfAbsent(sessionId, () => SessionEventLog(sessionId: sessionId));
+    }
+
+    final modeName = request['operatingMode'] as String? ?? 'autonomous';
+    final operatingMode = AgentOperatingMode.values.firstWhere(
+      (m) => m.name == modeName,
+      orElse: () => AgentOperatingMode.autonomous,
+    );
+
     final agent = Quickstart.createAgent(
       factory,
       model: model,
       harness: harness,
+      permissionManager: permissionManager,
+      plugins: pluginRegistry,
+      sessionLog: sessionLog,
+      operatingMode: operatingMode,
     );
 
     if (request.containsKey('initialState') && request['initialState'] is Map) {
@@ -268,6 +340,7 @@ class AgentBridgeDispatcher {
         'state': agent.getStateSnapshot(),
         'heapHandles': agent.context.heap.handles,
         'trace': agent.context.tracer.events.map((e) => e.toJson()).toList(),
+        if (sessionLog != null) 'sessionEventCount': sessionLog.events.length,
       };
     } catch (e, stack) {
       return {
@@ -282,4 +355,3 @@ class AgentBridgeDispatcher {
     }
   }
 }
-

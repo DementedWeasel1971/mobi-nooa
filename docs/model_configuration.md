@@ -119,7 +119,15 @@ bridge.runAgent(
 
 ---
 
-## 📱 4. Other Supported Model Providers
+### DeepSeek AI (`DeepSeekClient`) — DeepSeek-R1 & V3
+```dart
+final deepseek = DeepSeekClient(
+  apiKey: 'sk-...',
+  modelName: 'deepseek-reasoner', // DeepSeek-R1 with reasoning extraction
+  // or modelName: 'deepseek-chat' (DeepSeek-V3)
+  // optional: baseUrl: 'https://api.deepseek.com'
+);
+```
 
 ### Google Gemini (`GeminiClient`)
 ```dart
@@ -159,3 +167,4 @@ final onDevice = OnDeviceModelClient(
   template: PromptTemplate.llama3,
 );
 ```
+

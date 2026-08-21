@@ -205,7 +205,9 @@ mobi_nooa_core/            (Dart, platform-agnostic)
   lib/src/storage/         checkpoint persistence (SQLite-backed)
   lib/src/skills/          procedural knowledge & skill store (two-way)
   lib/src/governor/        adaptive on-device resource governor & load balancer
-  lib/src/security/        AST-level guardrails for CodeAct execution
+  lib/src/security/        AST guardrails & tiered permission manager (DeepSeek Harness)
+  lib/src/plugin/          plugin-first architecture & service seam (DeepSeek Harness)
+  lib/src/session/         append-only session event log, replay & forking (DeepSeek Harness)
   lib/src/bench/           benchmark task/suite/report model + runners
   lib/src/util/            Quickstart agent wiring, prompt-building helpers
   lib/src/tracing/         structured tracing/telemetry

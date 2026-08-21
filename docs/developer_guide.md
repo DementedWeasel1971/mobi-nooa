@@ -281,18 +281,108 @@ await harness.createSkill(
 
 `mobi-nooa` supports swappable LLM clients:
 
+- **DeepSeek AI (`DeepSeekClient`)**: Full support for DeepSeek-R1 (`deepseek-reasoner`) reasoning streams (`reasoning_content` and `<think>` tags) and DeepSeek-V3 (`deepseek-chat`) with prompt cache telemetry (`prompt_cache_hit_tokens`).
 - **`OnDeviceModelClient`**: Local offline inference via `llama.cpp` (GGUF) or `LiteRT-LM` (ARM64 NEON / Hexagon NPU / Tensor EdgeTPU).
   - Templates: `PromptTemplate.llama3`, `PromptTemplate.chatMl`, `PromptTemplate.gemma`, `PromptTemplate.raw`.
-- **Frontier Cloud Clients**: `GeminiClient`, `AnthropicClient`, `OpenAIClient`, `OllamaClient`.
+- **Frontier Cloud Clients**: `GeminiClient`, `AnthropicClient`, `OpenAIClient`, `OllamaClient`, `NvidiaClient`.
 
 ---
 
-## 🔍 8. Verification Commands
+## 🔌 8. Building Custom Plugins (`nooa-plugins`, ADR 0011)
+
+Extend agent capabilities dynamically without modifying core classes (DeepSeek Harness "Everything is a plugin" design):
+
+```dart
+import 'package:mobi_nooa_core/mobi_nooa_core.dart';
+
+class CustomToolsPlugin extends AgentPlugin {
+  CustomToolsPlugin()
+      : super(
+          name: 'custom_tools',
+          version: '1.0.0',
+          description: 'Dynamic tools and step logging middleware',
+        );
+
+  @override
+  List<ActionMetadata> get providedActions => [
+        ActionMetadata(
+          name: 'calculateRiskScore',
+          description: 'Calculates security risk score based on telemetry',
+          parameters: const [
+            ToolParameter(name: 'batteryLevel', type: 'integer', description: 'Battery percentage'),
+          ],
+          invoker: (args) async => ((args['batteryLevel'] as int) < 20) ? 'HIGH' : 'LOW',
+        ),
+      ];
+
+  @override
+  Future<void> onAfterStep(int stepIndex, ModelResponse response) async {
+    print('Step $stepIndex finished with ${response.usage.totalTokens} tokens.');
+  }
+}
+```
+
+---
+
+## 🛡️ 9. Enforcing Tiered Permissions (`nooa-security`, ADR 0011)
+
+Decouple permission policies from tool implementations and prompt users before dangerous actions:
+
+```dart
+final permissionManager = PermissionManager(
+  policy: PermissionPolicy.defaultMobile(),
+  approvalHandler: (request) async {
+    // Interactively prompt user on Android UI
+    print('Prompting user for: ${request.actionName} (${request.arguments})');
+    return true; // Approved
+  },
+);
+
+final agent = Quickstart.createAgent(
+  () => AutonomousCodingAgent(),
+  permissionManager: permissionManager,
+);
+```
+
+---
+
+## 📜 10. Append-Only Session Event Logging & Time-Travel Forking (ADR 0011)
+
+Capture immutable session audit trails and explore speculative branches:
+
+```dart
+final sessionLog = SessionEventLog(sessionId: 'audit_session_01');
+final agent = Quickstart.createAgent(
+  () => AutonomousDeviceAgent(),
+  sessionLog: sessionLog,
+);
+
+await agent.ellipsis<String>('Audit network security');
+
+// Reconstruct agent state at step 1 (Time-Travel)
+final step1Snapshot = sessionLog.replay(1);
+
+// Fork session into a new independent branch
+final forkedLog = sessionLog.fork(newSessionId: 'speculative_branch', fromStepIndex: 1);
+```
+
+---
+
+## 🚀 11. Deployment Workflows
+
+- **Android Mobile App**: Build and install via `./gradlew :app:assembleDebug` and `adb install`. See `.github/skills/deploy-mobi-nooa/SKILL.md`.
+- **Standalone CLI**: Run interactive agent loops via `dart run bin/mobi_nooa.dart --trace`.
+- **Evaluation Suite**: Run SOTA benchmarks via `dart run example/run_benchmarks.dart`.
+
+---
+
+## 🔍 12. Verification Commands
 
 Run static analysis and tests before submitting pull requests:
 
 ```bash
 cd mobi_nooa_core
 dart analyze
-dart test
+dart test --exclude-tags live
 ```
+

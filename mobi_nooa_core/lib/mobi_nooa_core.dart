@@ -1,5 +1,6 @@
 /// mobi-nooa Core Engine: Mobile Object-Oriented Agents
-/// Faithful Dart/Kotlin adaptation of NVIDIA NOOA (labs-OO-Agents, arXiv:2607.20709).
+/// Faithful Dart/Kotlin adaptation of NVIDIA NOOA (labs-OO-Agents, arXiv:2607.20709)
+/// and DeepSeek Harness (dsh) plugin-first architecture.
 library mobi_nooa_core;
 
 // Agent Core
@@ -10,6 +11,7 @@ export 'src/agent/general_mobile_agent.dart';
 export 'src/agent/autonomous_device_agent.dart';
 export 'src/agent/data_analyst_agent.dart';
 export 'src/agent/autonomous_coding_agent.dart';
+export 'src/agent/operating_mode.dart';
 export 'src/agent/reflector.dart';
 
 // Object Heap & Pass-by-Reference (Principle 2)
@@ -36,6 +38,7 @@ export 'src/models/anthropic_client.dart';
 export 'src/models/ollama_client.dart';
 export 'src/models/on_device_client.dart';
 export 'src/models/nvidia_client.dart';
+export 'src/models/deepseek_client.dart';
 
 // Model-Callable Harness APIs (Principle 6)
 export 'src/harness/harness_api.dart';
@@ -52,8 +55,20 @@ export 'src/tools/file_editor_tool.dart';
 export 'src/tools/shell_tool.dart';
 export 'src/tools/code_search_tool.dart';
 
-// AST Security & Guardrails
+// AST Security, Tiered Permissions & Guardrails
 export 'src/security/ast_guardrails.dart';
+export 'src/security/permission_policy.dart';
+export 'src/security/permission_manager.dart';
+
+// Plugin System & Service Seam (DeepSeek Harness Architecture)
+export 'src/plugin/agent_plugin.dart';
+export 'src/plugin/plugin_context.dart';
+export 'src/plugin/plugin_registry.dart';
+export 'src/plugin/built_in_plugins.dart';
+
+// Append-Only Session Event Log, Replay & Forking (DeepSeek Harness Architecture)
+export 'src/session/session_event.dart';
+export 'src/session/session_event_log.dart';
 
 // Memory & Cognitive ACT-R Activation (nooa-memory)
 export 'src/memory/act_r_memory.dart';

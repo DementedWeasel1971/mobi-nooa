@@ -82,41 +82,46 @@ For completely offline execution without cloud APIs, `OnDeviceModelEngine` imple
 
 ---
 
-## 🏛️ 5. Modern Kotlin Architecture & Jetpack Compose Bindings
+## 🏛️ 5. Modern Kotlin Clean Architecture & Jetpack Compose Bindings
 
-`android_mobi_nooa` follows standard Google Android Architecture Guidelines with clean Domain, Data, and Presentation layers:
+`android_mobi_nooa` follows strict Google Android Clean Architecture Guidelines with decoupled **Domain**, **Data**, and **Presentation (MVI/UDF)** layers:
 
-### A. Domain Layer (`AgentRepository` & `AgentState`)
+### A. Domain Layer (Pure Kotlin Models & Single-Responsibility Use Cases)
+- **Domain Models** (`com.mobi.nooa.domain`):
+  - `AgentModels.kt`: `AgentExecutionResult`, `AgentState`, `AgentInfo`, `HardwareTelemetry`, `GovernorBudget`, `PluginInfo`, `SessionInfo`, `ModelConfig` (Mock, OnDevice, DeepSeek, Nvidia, Cloud), `AgentOperatingMode`.
+- **Domain Use Cases** (`com.mobi.nooa.domain.usecases`):
+  - `ExecuteAgentTaskUseCase`: Validates parameters and triggers autonomous agent loops.
+  - `ListRegisteredAgentsUseCase`: Retrieves available reference agents with rich capability metadata.
+  - `GetDeviceTelemetryUseCase`: Queries live battery, thermal, and RAM headroom.
+  - `ManageSessionUseCase`: Orchestrates time-travel replay and branch forking.
+  - `ManagePluginsUseCase`: Lists active dynamic tool and telemetry plugins.
+  - `AssessGovernorBudgetUseCase`: Calculates real-time concurrency caps and thermal throttling delays.
+
+### B. Data Layer (`DefaultAgentRepository` & `MobiNooaBridge`)
+- `DefaultAgentRepository`: Bridges Kotlin domain operations to the headless Dart engine over `MobiNooaBridge` and `DeviceHarnessBridge`.
+- `MobiNooaBridge`: Single process-wide singleton executing inside a background `FlutterEngine`.
+
+### C. Presentation Layer (MVI / UDF ViewModels & Jetpack Compose)
+- `AgentViewModel`: General-purpose agent coordinator with reactive `StateFlow<AgentState>`.
+- `AgentHubViewModel`: Dashboard state, mode pills, model switcher, and hardware status chips.
+- `AgentExecutionViewModel`: Live trajectory stream, DeepSeek-R1 reasoning thought accordion (`reasoningContent`), CodeAct diffs, `#ref_xxx` heap handles, and interactive permission sheets.
+- `SessionTimelineViewModel`: Time-travel step scrubber and branch forker.
+- `ResourceGovernorViewModel`: Hardware telemetry gauges, heap compaction triggers, and adaptive load balancer.
+
+### D. Dependency Injection (`MobiNooaContainer` & `MobiNooaViewModelFactory`)
 ```kotlin
-// Inject repository into your ViewModels / UseCases
-val repository: AgentRepository = DefaultAgentRepository(MobiNooaBridge.getInstance(context))
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // 1. Initialize Dependency Container
+        val container = MobiNooaContainer(applicationContext)
 
-// Observe reactive state
-lifecycleScope.launch {
-    repository.agentState.collect { state ->
-        when (state) {
-            is AgentState.Idle -> showIdleState()
-            is AgentState.Running -> showProgress(state.currentStep, state.maxSteps)
-            is AgentState.Success -> renderResult(state.result.resultText)
-            is AgentState.Failed -> showError(state.error)
-        }
+        // 2. Obtain ViewModels via Custom Factory
+        val factory = MobiNooaViewModelFactory(container)
+        val agentViewModel = ViewModelProvider(this, factory)[AgentViewModel::class.java]
+        val hubViewModel = ViewModelProvider(this, factory)[AgentHubViewModel::class.java]
     }
 }
 ```
 
-### B. Presentation Layer (`AgentViewModel`)
-```kotlin
-class MyAgentScreenViewModel(
-    private val agentViewModel: AgentViewModel
-) : ViewModel() {
-    val uiState: StateFlow<AgentState> = agentViewModel.agentState
-
-    fun runTriage() {
-        agentViewModel.executeTask(
-            agentName = "AutonomousDeviceAgent",
-            goal = "Triage battery drain and inspect background processes",
-            modelConfig = ModelConfig.OnDevice(template = "llama3")
-        )
-    }
-}
-```

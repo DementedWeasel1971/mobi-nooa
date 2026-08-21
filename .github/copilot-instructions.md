@@ -7,22 +7,28 @@
 ## Project summary
 
 mobi-nooa is a Dart/Kotlin implementation of NVIDIA's NOOA (Object-Oriented
-Agents) framework, built for mobile/on-device agentic AI. Two modules:
+Agents) framework fused with DeepSeek Harness's plugin-first architecture,
+built for mobile/on-device agentic AI. Two primary modules:
 
 - `mobi_nooa_core/` — platform-agnostic Dart engine: 5 reference agents
   (`AutonomousDeviceAgent`, `DataAnalystAgent`, `AutonomousCodingAgent`,
-  `BenchAgent`, `GeneralMobileAgent`), object heap, CodeAct execution,
-  programmable loop, pluggable execution strategies (ReAct, CodeAct,
-  Plan-and-Solve, Self-Reflection), two-way procedural skills (`nooa-skills`),
-  model clients (Gemini, Claude, OpenAI, Ollama, OnDevice/llama.cpp),
-  harnesses (filesystem, network, device, memory, SQLite, MCP, skills),
-  coding tools (shell/file-editor/code-search), cognitive long-term memory
-  (ACT-R activation, owner-gated scoping), SQLite-backed checkpoint storage,
-  AST security guardrails, benchmarking suite, and tracing.
+  `BenchAgent`, `GeneralMobileAgent`), object heap with pass-by-reference handles
+  (`#ref_xxx`), CodeAct sandboxed evaluator, programmable loop, pluggable execution
+  strategies (ReAct, CodeAct, Plan-and-Solve, Self-Reflection), two-way procedural
+  skills (`nooa-skills`), model clients (DeepSeek-R1/V3, Gemini, Claude, OpenAI,
+  Ollama, Nvidia NIM, OnDevice/llama.cpp), harnesses (filesystem, network, device,
+  memory, SQLite, MCP, skills), coding tools (shell/file-editor/code-search),
+  cognitive long-term memory (ACT-R activation, owner-gated scoping), SQLite-backed
+  checkpoint storage, tiered permission policy engine (`PermissionManager`),
+  plugin-first service seam (`AgentPlugin`/`PluginRegistry`), append-only session
+  event logs with time-travel replay & forking (`SessionEventLog`), adaptive
+  on-device resource governor (`nooa-governor`), AST security guardrails,
+  benchmarking suite (SWE-bench & Mobile-Bench), and tracing.
 - `android_mobi_nooa/` — Android/Kotlin library bridging into the Dart core
   via a headless Flutter engine + `MethodChannel` (`MobiNooaBridge.kt`,
-  see ADR 0007); `mobi_nooa_bridge/` is the thin, UI-less Flutter shim that
-  wraps `mobi_nooa_core`'s `AgentBridgeDispatcher` on the Dart side.
+  see ADR 0007); `MobiNooaService` (foreground non-killable loops) and
+  `MobiNooaWorker` (WorkManager scheduled tasks); `mobi_nooa_bridge/` is the
+  thin, UI-less Flutter shim that wraps `mobi_nooa_core`'s `AgentBridgeDispatcher`.
 
 ## Conventions Copilot must follow
 
@@ -38,6 +44,10 @@ Agents) framework, built for mobile/on-device agentic AI. Two modules:
 - New model providers implement `ModelClient`; new device/tool capabilities
   implement the relevant `*Harness` interface and are named `*_harness.dart`
   (see `.github/skills/add-nooa-harness/SKILL.md`).
+- New plugins implement `AgentPlugin` (`lib/src/plugin/`) and register via
+  `PluginRegistry` (see `.github/skills/add-nooa-plugin/SKILL.md`).
+- Sensitive operations on mobile must be evaluated via `PermissionManager`
+  and respect `PermissionPolicy`.
 - New coding tools build on an existing harness rather than calling
   `dart:io` directly; new execution strategies implement `ExecutionStrategy`
   rather than adding branches to `AgentLoop`.
@@ -51,11 +61,12 @@ Agents) framework, built for mobile/on-device agentic AI. Two modules:
   write or update unit tests in `mobi_nooa_core/test/` or `android_mobi_nooa/src/test/`
   before implementing new agents, harnesses, strategies, or Kotlin repositories.
   Use `MockModelClient` for deterministic LLM agent loop testing.
-- After editing Dart code, run `dart analyze` and `dart test` in
-  `mobi_nooa_core/`. After editing Kotlin/Gradle code, run `./gradlew build`
+- After editing Dart code, run `dart analyze` and `dart test --exclude-tags live`
+  in `mobi_nooa_core/`. After editing Kotlin/Gradle code, run `./gradlew build`
   in `android_mobi_nooa/`.
 - Architecturally significant changes need an ADR in `docs/decisions/` and a
   `DESIGN.md` update.
 - Never commit secrets, API keys, or `local.properties`.
 
-For full detail (build commands, examples, guardrails), read `AGENTS.md`.
+For full detail (build commands, examples, guardrails, deployment workflows, UI design),
+read `AGENTS.md`, `.github/skills/deploy-mobi-nooa/SKILL.md`, and `.github/skills/design-mobi-nooa-ui/SKILL.md`.

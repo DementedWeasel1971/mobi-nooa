@@ -49,7 +49,13 @@
 - **PlanAndSolve**: Two-stage task decomposition and sequential step execution.
 - **SelfReflection**: Root-cause diagnosis and correction hypothesis formulation upon error.
 
-### 6. `nooa.bench`: Evaluation Suite
+### 6. DeepSeek Harness Integration: Plugins, Permissions & Session Forking (ADR 0011)
+- **Plugin-First Architecture ("Everything is a plugin")**: Dynamic lifecycle (`AgentPlugin`, `PluginRegistry`) allowing tools, middleware, telemetry loggers, and harnesses to be loaded and intercepted without core modifications.
+- **Decoupled Tiered Permissions**: Mobile safety policy engine (`PermissionPolicy`, `PermissionManager`) supporting `allow`, `prompt` (with interactive `ApprovalCallback`), `deny`, and `quarantine`.
+- **Append-Only Session Event Log**: Comprehensive chronological event stream (`SessionEventLog`) supporting **Time-Travel State Replay** and **Session Branching / Forking**.
+- **DeepSeek-R1 & V3 First-Class Reasoning**: `DeepSeekClient` with automated reasoning extraction (`reasoning_content`, `<think>` tags) and prompt cache telemetry.
+
+### 7. `nooa.bench`: Evaluation Suite
 - On-device benchmark runner generating SOTA metrics (pass rate, step efficiency, token usage) and JSONL reports for SWE-bench and Mobile-Bench.
 
 ---
@@ -65,14 +71,16 @@ nooa/
 │   │       ├── agent/                  # AutonomousDevice, DataAnalyst, AutonomousCoding, Bench, GeneralMobile
 │   │       ├── heap/                   # ObjectHeap, ObjectReference, BoundedPreview
 │   │       ├── engine/                 # CodeActEngine, SandboxedEnvironment, AstEvaluator
-│   │       ├── security/               # AstGuardrails (AST validation & deny-lists)
+│   │       ├── security/               # AstGuardrails, PermissionPolicy, PermissionManager
 │   │       ├── memory/                 # CognitiveMemoryStore, ActRActivation, OwnerGatedScope
 │   │       ├── storage/                # AgentCheckpoint, StateStorageManager
 │   │       ├── skills/                 # Skill, SkillStore, SkillHarness (nooa-skills)
+│   │       ├── plugin/                 # AgentPlugin, PluginRegistry, DynamicToolPlugin, TelemetryLoggerPlugin
+│   │       ├── session/                # SessionEvent, SessionEventLog, ReplayState (Time-travel & Forking)
 │   │       ├── strategies/             # ReAct, CodeAct, PlanAndSolve, SelfReflection
 │   │       ├── bench/                  # BenchmarkSuite, SweBenchSuite, MobileBenchSuite
 │   │       ├── tools/                  # FileEditorTool, ShellHarness, CodeSearchTool
-│   │       ├── models/                 # Gemini, OpenAI, Claude, Ollama, OnDevice models
+│   │       ├── models/                 # Gemini, OpenAI, Claude, Ollama, DeepSeek, OnDevice models
 │   │       ├── harness/                # Device, FileSystem, Network, Memory, MCP, SQLite
 │   │       ├── util/                   # Quickstart, PromptBuilder
 │   │       └── tracing/                # Tracer, TraceEvent, JSONL telemetry

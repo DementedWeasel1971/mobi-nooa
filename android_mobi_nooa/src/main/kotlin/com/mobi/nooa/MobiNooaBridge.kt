@@ -16,9 +16,9 @@ import kotlin.coroutines.resume
  * headless Flutter engine executing the `mobi_nooa_bridge` Dart entrypoint
  * (a thin package that forwards platform-channel calls into
  * `AgentBridgeDispatcher.handle` from `mobi_nooa_core`), and exposes a
- * simple suspend-function API (`runAgentLoop`, `listAgents`) so
- * [MobiNooaService] and [MobiNooaWorker] can call into real agent logic
- * instead of stub comments.
+ * simple suspend-function API (`runAgentLoop`, `listAgents`, `replaySession`,
+ * `forkSession`, `listPlugins`) so [MobiNooaService] and [MobiNooaWorker]
+ * can call into real agent logic.
  *
  * Additionally, it provides the reverse channel `com.mobi.nooa/device_harness`
  * so the Dart agent core can query real Android telemetry (battery, network)
@@ -29,9 +29,6 @@ class MobiNooaBridge private constructor(context: Context) {
     val deviceHarness: DeviceHarnessBridge = DeviceHarnessBridge(context.applicationContext)
 
     private val engine: FlutterEngine = FlutterEngine(context.applicationContext).apply {
-        // Executes the mobi_nooa_bridge package's headless Dart entrypoint
-        // (main()), which registers the MethodChannel handler below on the
-        // Dart side and forwards calls into AgentBridgeDispatcher.handle.
         dartExecutor.executeDartEntrypoint(
             DartExecutor.DartEntrypoint.createDefault()
         )
@@ -48,6 +45,12 @@ class MobiNooaBridge private constructor(context: Context) {
                 }
                 "getNetworkStatus" -> {
                     result.success(deviceHarness.getNetworkStatus())
+                }
+                "getMemoryInfo" -> {
+                    result.success(deviceHarness.getMemoryInfo())
+                }
+                "getThermalStatus" -> {
+                    result.success(deviceHarness.getThermalStatus())
                 }
                 "showNotification" -> {
                     val channelId = call.argument<String>("channelId") ?: "mobi_nooa_channel"
@@ -81,6 +84,7 @@ class MobiNooaBridge private constructor(context: Context) {
         modelApiKey: String? = null,
         modelBaseUrl: String? = null,
         modelName: String? = null,
+        operatingMode: String = "autonomous",
     ): Map<String, Any?> {
         val request = mutableMapOf<String, Any?>(
             "action" to "runAgentLoop",
@@ -88,6 +92,7 @@ class MobiNooaBridge private constructor(context: Context) {
             "goal" to goal,
             "inputs" to inputs,
             "maxSteps" to maxSteps,
+            "operatingMode" to operatingMode,
             "model" to mapOf(
                 "provider" to modelProvider,
                 "apiKey" to modelApiKey,
@@ -106,6 +111,26 @@ class MobiNooaBridge private constructor(context: Context) {
 
     /** Lists model providers registered on the Dart-side dispatcher. */
     suspend fun listModelProviders(): Map<String, Any?> = invoke(mapOf("action" to "listModelProviders"))
+
+    /** Replays a session state up to a specified step index. */
+    suspend fun replaySession(sessionId: String, stepIndex: Int): Map<String, Any?> =
+        invoke(mapOf("action" to "replaySession", "sessionId" to sessionId, "stepIndex" to stepIndex))
+
+    /** Forks an existing session from a step index into a new branch. */
+    suspend fun forkSession(sessionId: String, newSessionId: String, fromStepIndex: Int): Map<String, Any?> =
+        invoke(mapOf(
+            "action" to "forkSession",
+            "sessionId" to sessionId,
+            "newSessionId" to newSessionId,
+            "fromStepIndex" to fromStepIndex
+        ))
+
+    /** Lists plugins registered in the plugin registry. */
+    suspend fun listPlugins(): Map<String, Any?> = invoke(mapOf("action" to "listPlugins"))
+
+    /** Sets the active permission policy (defaultMobile, strictAudit, permissive). */
+    suspend fun setPermissionPolicy(policy: String): Map<String, Any?> =
+        invoke(mapOf("action" to "setPermissionPolicy", "policy" to policy))
 
     /** Persists an agent checkpoint into the SQLite state storage manager. */
     suspend fun saveCheckpoint(checkpoint: Map<String, Any?>): Map<String, Any?> =

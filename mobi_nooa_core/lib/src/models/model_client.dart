@@ -159,22 +159,27 @@ class ToolCall {
   }
 }
 
-/// Token usage details.
+/// Token usage details including prompt cache statistics.
 class TokenUsage {
   final int promptTokens;
   final int completionTokens;
   final int totalTokens;
+  final int? promptCacheHitTokens;
+  final int? promptCacheMissTokens;
 
   const TokenUsage({
     this.promptTokens = 0,
     this.completionTokens = 0,
     this.totalTokens = 0,
+    this.promptCacheHitTokens,
+    this.promptCacheMissTokens,
   });
 }
 
 /// Response returned by a [ModelClient].
 class ModelResponse {
   final String text;
+  final String? reasoningContent;
   final List<ToolCall> toolCalls;
   final String finishReason;
   final TokenUsage usage;
@@ -182,6 +187,7 @@ class ModelResponse {
 
   ModelResponse({
     this.text = '',
+    this.reasoningContent,
     this.toolCalls = const [],
     this.finishReason = 'stop',
     this.usage = const TokenUsage(),
@@ -189,6 +195,7 @@ class ModelResponse {
   });
 
   bool get hasToolCalls => toolCalls.isNotEmpty;
+  bool get hasReasoning => reasoningContent != null && reasoningContent!.isNotEmpty;
 }
 
 /// Abstract contract for any model provider (Cloud or On-Device).
